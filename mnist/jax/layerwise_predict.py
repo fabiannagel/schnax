@@ -1,15 +1,8 @@
-from typing import List
 from jax import random
 import jax.numpy as jnp
 from jax.experimental import stax
 import torch
-import datasets
-
-
-def get_layer_names(model) -> List[str]:
-    replace = lambda k: k.replace(".weight", "").replace(".bias", "")
-    unique_layer_names = dict.fromkeys(map(replace, model.keys()))
-    return list(unique_layer_names)
+from mnist import datasets
 
 
 def get_params(layer_name: str, model):
@@ -39,7 +32,7 @@ def compute_forward_pass(layer_idx: int, input, layers, params):
     return input
 
 rng = random.PRNGKey(0)
-_, __, test_images, test_labels = datasets.mnist()
+test_images, test_labels = datasets.load_test_data(torch=False)
 model = torch.load("pytorch_weights_mnist.torch")
 
 layers = [
@@ -51,18 +44,17 @@ layers = [
 # we don't care about init functions
 _, predict = stax.serial(*layers)
 
-# print(get_layer_names(model))
 params = [
     get_params("fc1", model), (),
     get_params("fc2", model), (),
     get_params("fc3", model), ()
 ]
 
-for idx in range(10):
-    pred = compute_forward_pass(5, test_images[idx], layers, params)
+for data_point_idx in range(10):
+    pred = compute_forward_pass(5, test_images[data_point_idx], layers, params)
     pred_class = jnp.argmax(pred)
-    true_class = jnp.argmax(test_labels[idx])
+    true_class = jnp.argmax(test_labels[data_point_idx])
 
     print("Predicted label: {}".format(pred_class))
-    print("Ground truth: {}".format(true_class))
-    print()
+    print("Ground truth: {}\n".format(true_class))
+

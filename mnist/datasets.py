@@ -23,7 +23,7 @@ import struct
 import urllib.request
 
 import numpy as np
-
+import torch
 
 _DATA = "/tmp/jax_example_data/"
 
@@ -91,3 +91,10 @@ def mnist(permute_train=False):
     train_labels = train_labels[perm]
 
   return train_images, train_labels, test_images, test_labels
+
+
+def load_test_data(torch_tensor: bool):
+  _, __, test_images, test_labels = mnist()
+  if torch_tensor:
+    return torch.Tensor(test_images), torch.Tensor(test_labels)
+  return test_images, test_labels
