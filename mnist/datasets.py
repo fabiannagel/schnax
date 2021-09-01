@@ -93,8 +93,6 @@ def mnist(permute_train=False):
   return train_images, train_labels, test_images, test_labels
 
 
-def load_test_data(torch_tensor: bool):
+def load_test_data():
   _, __, test_images, test_labels = mnist()
-  if torch_tensor:
-    return torch.Tensor(test_images), torch.Tensor(test_labels)
   return test_images, test_labels
