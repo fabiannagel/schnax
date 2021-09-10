@@ -1,4 +1,6 @@
-from typing import Dict
+from typing import Dict, List
+
+import numpy as np
 import torch
 from mnist.pytorch.train import MLP as torch_MLP
 
@@ -7,7 +9,11 @@ class TorchClassifier:
 
     def __init__(self, model_file="pytorch_weights_mnist.torch"):
         self.model = self._load_torch_model(model_file)
-        self.layer_outputs = self._create_layerwise_hooks()
+        self._layer_outputs = self._create_layerwise_hooks()
+
+    @property
+    def layer_outputs(self) -> List[np.ndarray]:
+        return list(map(lambda t: t.numpy(), self._layer_outputs.values()))
 
     def _load_torch_model(self, model_file: str):
         state_dict = torch.load(model_file)
@@ -34,8 +40,8 @@ class TorchClassifier:
 
         return layer_outputs
 
-    def predict(self, input: torch.tensor) -> torch.tensor:
+    def predict(self, input: torch.tensor) -> np.ndarray:
         if type(input) != torch.Tensor:
             input = torch.tensor(input)
         pred = self.model(input)
-        return pred
+        return pred.detach().numpy()

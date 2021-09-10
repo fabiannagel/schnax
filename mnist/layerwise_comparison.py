@@ -1,19 +1,29 @@
 import numpy as np
 
 from datasets import load_test_data
-from mnist.jax.layerwise_predict import JaxClassifier
+import mnist.haiku.layerwise_predict as haiku_classifier
+from mnist.stax.layerwise_predict import StaxClassifier
 from mnist.pytorch.layerwise_predict import TorchClassifier
 
-model_file="pytorch/pytorch_weights_mnist.torch"
+# np.testing.assert_allcose() compares the difference between actual and desired to atol + rtol * abs(desired).
+rtol = 1e-6
+atol = 1e-6
+
+torch_model_file= "pytorch_weights_mnist.torch"
 test_images, test_labels = load_test_data()
 
-torch_classifier = TorchClassifier(model_file)
-jax_classifier = JaxClassifier(model_file)
+torch_classifier = TorchClassifier(torch_model_file)
+# stax_classifier = StaxClassifier(torch_model_file)
+haiku_params = haiku_classifier.get_params("pytorch_weights_mnist.torch")
 
-for input in test_images:
-    torch_prediction = torch_classifier.predict(input)
-    jax_prediction = jax_classifier.predict(input)
+for x in test_images:
+    torch_prediction = torch_classifier.predict(x)
+    # stax_prediction = stax_classifier.predict(input)
+    haiku_prediction, haiku_layer_outputs = haiku_classifier.predict(x, haiku_params)
 
-    for torch_params, jax_params in zip(torch_classifier.layer_outputs.values(), jax_classifier.layer_outputs.values()):
-        torch_params = np.array(torch_params)
-        np.testing.assert_allclose(jax_params, torch_params, atol=1e-6)
+    # compare intermediate outputs of all layers
+    for torch_layer_output, haiku_layer_output in zip(torch_classifier.layer_outputs, haiku_layer_outputs):
+        np.testing.assert_allclose(haiku_layer_output, torch_layer_output, rtol=rtol, atol=atol)
+
+    # compare final prediction
+    np.testing.assert_allclose(haiku_prediction, torch_prediction, rtol=rtol, atol=atol)
