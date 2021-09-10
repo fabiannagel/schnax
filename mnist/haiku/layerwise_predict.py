@@ -8,27 +8,6 @@ from haiku._src.data_structures import FlatMapping
 from jax import jit
 
 
-class TorchInitializer(hk.initializers.Initializer):
-
-    def __init__(self, layer_name: str, torch_model: OrderedDict):
-        self.layer_param_key = layer_name
-        self.torch_model = torch_model
-
-    def _get_layer_params(self) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        weight_or_bias = self.torch_model[self.layer_param_key]
-        if weight_or_bias.device != "cpu":
-            weight_or_bias = weight_or_bias.cpu()
-
-        # for weights: transpose to match Haiku's (input, output) shape convention
-        if weight_or_bias.ndim > 1:
-            weight_or_bias = weight_or_bias.T
-
-        return jnp.array(weight_or_bias.numpy())
-
-    def __call__(self, shape: Sequence[int], dtype: Any) -> jnp.ndarray:
-        return self._get_layer_params()
-
-
 class HaikuClassifier(hk.Module):
 
     def __init__(self):
@@ -37,9 +16,6 @@ class HaikuClassifier(hk.Module):
         # tm = torch.load(torch_model_file)
 
         self.mlp = hk.Sequential([
-            # hk.Linear(1024, w_init=TorchInitializer("fc1.weight", tm), b_init=TorchInitializer("fc1.bias", tm)), jax.nn.relu,
-            # hk.Linear(1024, w_init=TorchInitializer("fc2.weight", tm), b_init=TorchInitializer("fc2.bias", tm)), jax.nn.relu,
-            # hk.Linear(10, w_init=TorchInitializer("fc3.weight", tm), b_init=TorchInitializer("fc3.bias", tm)), jax.nn.softmax
             hk.Linear(1024), jax.nn.relu,
             hk.Linear(1024), jax.nn.relu,
             hk.Linear(10), jax.nn.softmax
