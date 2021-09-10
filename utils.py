@@ -1,9 +1,23 @@
+from functools import partial
 from typing import Dict, Tuple
 
 import torch
+from haiku._src.data_structures import to_haiku_dict
+from jax_md.energy import DisplacementFn
+
 from schnet.convert import get_converter
 from ase.io import read
 import jax.numpy as jnp
+import jax_md
+import haiku as hk
+
+
+def compute_neighbor_list_distances(displacement_fn: DisplacementFn, R, neighbors, **kwargs):
+    d = partial(displacement_fn, **kwargs)
+    d = jax_md.space.map_neighbor(d)
+    R_neighbors = R[neighbors.idx]
+    dR = d(R, R_neighbors)
+    return dR
 
 
 def get_input(geometry_file: str, r_cutoff: float) -> Tuple[jnp.float32, jnp.float32, jnp.float32]:
@@ -13,14 +27,15 @@ def get_input(geometry_file: str, r_cutoff: float) -> Tuple[jnp.float32, jnp.flo
 
     box = jnp.float32(inputs['_cell'][0].numpy())
     R = jnp.float32(inputs['_positions'][0].numpy())
-    Z = jnp.float32(inputs['_atomic_numbers'][0].numpy())
+    Z = jnp.int32(inputs['_atomic_numbers'][0].numpy())
     return R, Z, box
 
 
 def get_params(torch_model_file: str) -> Dict:
     torch_model = torch.load(torch_model_file)
+    torch_model = torch_model['state']
 
-    list(filter(lambda k: k.startswith("representation"), torch_model['state'].keys()))
+    # list(filter(lambda k: k.startswith("representation"), torch_model.keys()))
     # ['representation.embedding.weight',
     #  'representation.distance_expansion.width', 'representation.distance_expansion.offsets',
 
@@ -36,9 +51,10 @@ def get_params(torch_model_file: str) -> Dict:
     #  'representation.interactions.0.dense.bias']
 
     params = {}
-    # torch_model['fc1.weight'].cpu().numpy().T
-    # torch_model['fc1.bias'].cpu().numpy()
+    params['SchNet/~/embeddings'] = {}
+    params['SchNet/~/embeddings']['embeddings']= torch_model['representation.embedding.weight'].cpu().numpy()
 
-    return params
+    return to_haiku_dict(params)
+
 
 # get_params("schnet/model_n1.torch")

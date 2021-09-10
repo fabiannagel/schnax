@@ -16,23 +16,20 @@ class Schnax(hk.Module):
     n_atom_basis = 128
     max_z = 100
 
-    def __init__(self, params: List[np.ndarray]):
+    def __init__(self):
         super().__init__(name="SchNet")
-        self.params = params
 
-        self.embedding = hk.Embed(self.max_z, self.n_atom_basis),       # TODO: Torch padding_idx missing in Haiku.
+        self.embedding = hk.Embed(self.max_z, self.n_atom_basis, name="embeddings")       # TODO: Torch padding_idx missing in Haiku.
         # distances: let JAX-MD handle this
-        # TODO: distance expansion
-        # TODO: interactions
+        # TODO: function for distance expansion
+        # TODO: interactions blocks
 
-    def __call__(self, r_ij: jnp.ndarray, Z: jnp.ndarray, *args, **kwargs) -> jnp.ndarray:
+    def __call__(self, dR: jnp.ndarray, Z: jnp.ndarray, *args, **kwargs) -> jnp.ndarray:
         # get embedding for Z
-        # x = self.embedding(Z)
-
+        x = self.embedding(Z)
         # expand interatomic distances (for example, Gaussian smearing)
         # compute interactions
-
-        return jnp.ones_like(Z)
+        return x
 
 
 """Convenience wrapper around Schnax"""
@@ -44,14 +41,9 @@ def schnet_neighbor_list(displacement_fn: DisplacementFn,
 
     @hk.without_apply_rng
     @hk.transform
-    def model(R: jnp.ndarray, Z: jnp.ndarray, neighbors: jnp.ndarray, **kwargs):
-        d = partial(displacement_fn, **kwargs)
-        d = jax_md.space.map_neighbor(d)
-        R_neigh = R[neighbors.idx]
-        dR = d(R, R_neigh)
-        # is dR.shape == (96, 48)?
-
-        net = Schnax(params)
+    def model(R: jnp.ndarray, Z: jnp.int32, neighbors: jnp.ndarray, **kwargs):
+        dR = utils.compute_neighbor_list_distances(displacement_fn, R, neighbors)
+        net = Schnax()
         return net(dR, Z)
 
     neighbor_fn = jax_md.partition.neighbor_list(
@@ -82,15 +74,16 @@ def predict(geometry_file: str):
     # obtain PRNG key
     rng = jax.random.PRNGKey(0)
 
-    # initialize model. we won't need these params as we will load the PyTorch model instead.
-    init_params = init_fn(rng, R, Z, neighbors)
+    # initialize model with a single example position and charge
+    # we won't need these params as we will load the PyTorch model instead.
+    _ = init_fn(rng, R, Z, neighbors)
 
+    # print(init_params)
     pred = apply_fn(params, R, Z, neighbors)
     return pred
 
 
 energy = predict("schnet/geometry.in")
-
 
 
 
