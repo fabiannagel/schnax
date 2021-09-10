@@ -81,7 +81,7 @@ def get_params(torch_model_file: str):
     return params
 
 
-# params = get_params("../pytorch_weights_mnist.torch")
+params = get_params("../pytorch_weights_mnist.torch")
 
 # pred, layer_outputs = predict(jnp.ones(shape=(784,)), params)
 # print(pred)
