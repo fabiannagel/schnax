@@ -12,22 +12,30 @@ import numpy as np
 import jax.numpy as jnp
 import jax
 
+from gaussian_smearing import GaussianSmearing
+
+
 class Schnax(hk.Module):
     n_atom_basis = 128
     max_z = 100
+    n_gaussians = 25
 
-    def __init__(self):
+    def __init__(self, r_cutoff: float):
         super().__init__(name="SchNet")
+        self.r_cutoff = r_cutoff
 
         self.embedding = hk.Embed(self.max_z, self.n_atom_basis, name="embeddings")       # TODO: Torch padding_idx missing in Haiku.
         # distances: let JAX-MD handle this
-        # TODO: function for distance expansion
+        # self.distance_expansion = GaussianSmearing(0.0, self.r_cutoff, self.n_gaussians)
         # TODO: interactions blocks
 
     def __call__(self, dR: jnp.ndarray, Z: jnp.ndarray, *args, **kwargs) -> jnp.ndarray:
         # get embedding for Z
         x = self.embedding(Z)
+
         # expand interatomic distances (for example, Gaussian smearing)
+        # dR = self.distance_expansion(dR)
+
         # compute interactions
         return x
 
@@ -36,14 +44,14 @@ class Schnax(hk.Module):
 def schnet_neighbor_list(displacement_fn: DisplacementFn,
                          box_size: Box,
                          r_cutoff: float,
-                         dr_threshold: float,
-                         params: Dict):
+                         dr_threshold: float):
 
     @hk.without_apply_rng
     @hk.transform
     def model(R: jnp.ndarray, Z: jnp.int32, neighbors: jnp.ndarray, **kwargs):
+        # dR.shape == (N, max_neighbors, 3)
         dR = utils.compute_neighbor_list_distances(displacement_fn, R, neighbors)
-        net = Schnax()
+        net = Schnax(r_cutoff)
         return net(dR, Z)
 
     neighbor_fn = jax_md.partition.neighbor_list(
@@ -66,7 +74,9 @@ def predict(geometry_file: str):
     params = utils.get_params("schnet/model_n1.torch")
 
     displacement_fn, shift_fn = jax_md.space.periodic_general(box, fractional_coordinates=False)
-    neighbor_fn, init_fn, apply_fn = schnet_neighbor_list(displacement_fn, box, r_cutoff, dr_threshold, params)
+    displacement_fn = jax.jit(displacement_fn)
+
+    neighbor_fn, init_fn, apply_fn = schnet_neighbor_list(displacement_fn, box, r_cutoff, dr_threshold)
 
     # compute neighbor list
     neighbors = neighbor_fn(R)
