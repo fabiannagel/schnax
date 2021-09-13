@@ -49,8 +49,8 @@ def schnet_neighbor_list(displacement_fn: DisplacementFn,
     @hk.without_apply_rng
     @hk.transform
     def model(R: jnp.ndarray, Z: jnp.int32, neighbors: jnp.ndarray, **kwargs):
-        # dR.shape == (N, max_neighbors, 3)
-        dR = utils.compute_neighbor_list_distances(displacement_fn, R, neighbors)
+        dR = utils.compute_nl_distances(displacement_fn, R, neighbors, **kwargs)
+
         net = Schnax(r_cutoff)
         return net(dR, Z)
 
@@ -69,14 +69,13 @@ def schnet_neighbor_list(displacement_fn: DisplacementFn,
 
 def predict(geometry_file: str):
     r_cutoff = 5.0
-    dr_threshold = 1.0  # TODO: Does this make sense?
+    dr_threshold = 1.0
     R, Z, box = utils.get_input(geometry_file, r_cutoff)
     params = utils.get_params("schnet/model_n1.torch")
 
     displacement_fn, shift_fn = jax_md.space.periodic_general(box, fractional_coordinates=False)
-    displacement_fn = jax.jit(displacement_fn)
-
     neighbor_fn, init_fn, apply_fn = schnet_neighbor_list(displacement_fn, box, r_cutoff, dr_threshold)
+    apply_fn = jax.jit(apply_fn)
 
     # compute neighbor list
     neighbors = neighbor_fn(R)
@@ -88,13 +87,9 @@ def predict(geometry_file: str):
     # we won't need these params as we will load the PyTorch model instead.
     _ = init_fn(rng, R, Z, neighbors)
 
-    # print(init_params)
     pred = apply_fn(params, R, Z, neighbors)
     return pred
 
 
 energy = predict("schnet/geometry.in")
-
-
-
-
+print("feature_vectors.shape={}".format(energy.shape))

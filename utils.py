@@ -13,39 +13,22 @@ import jax.numpy as jnp
 import jax_md
 
 
-def compute_neighbor_list_distances(displacement_fn: DisplacementFn, R: jnp.ndarray, neighbors: NeighborList, dimensionwise=False, **kwargs):
+def compute_nl_distances(displacement_fn, R: jnp.ndarray, neighbors: NeighborList, dimension_wise=False, **kwargs):
+    """Compute interatomic distances for a matrix of atomic distances and their neighbor list indices."""
     d = partial(displacement_fn, **kwargs)
-    d = jax.jit(jax_md.space.map_neighbor(d))
-    R_neighbors = R[neighbors.idx]      # TODO: This seems to prevent the entire method to be jittable. Why?
+    d = jax_md.space.map_neighbor(d)
+
+    R_neighbors = R[neighbors.idx]
     dR = d(R, R_neighbors)
 
-    if dimensionwise:
+    if dimension_wise:
         return dR
-    return reduce_distances(dR)
 
-
-"""Compute magnitude vectors from dimension-wise distances."""
-@jax.jit
-def reduce_distances(dR: jnp.ndarray):
+    # reduce dimension-wise distances to vector magnitude
     magnitude_fn = lambda x: jnp.sqrt(jnp.sum(x ** 2))
     vectorized_fn = jax.vmap(jax.vmap(magnitude_fn, in_axes=0), in_axes=0)
     dR_magnitudes = vectorized_fn(dR)
     return dR_magnitudes
-
-
-"""From gknet-benchmarks repository. Just for documentation/commentary."""
-def compute_pairwise_distances(displacement_fn: DisplacementFn, R: jnp.ndarray):
-    # displacement_fn takes two vectors Ra and Rb
-    # space.map_product() vmaps it twice along rows and columns such that we can input matrices
-    dR_dimensionwise_fn = jax_md.space.map_product(displacement_fn)
-    dR_dimensionwise = dR_dimensionwise_fn(R, R)    # ... resulting in 4 dimension-wise distance matrices shaped (n, n, 3)
-    # Computing the vector magnitude for every row vector:
-    # First, map along the first axis of the initial (n, n, 3) matrix. the "output" will be (n, 3)
-    # Secondly, within the mapped (n, 3) matrix, map along the zero-th axis again (one atom).
-    # Here, apply the magnitude function for the atom's displacement row vector.
-    magnitude_fn = lambda x: jnp.sqrt(jnp.sum(x**2))
-    vectorized_fn = jax.vmap(jax.vmap(magnitude_fn, in_axes=0), in_axes=0)
-    return vectorized_fn(dR_dimensionwise)
 
 
 def get_input(geometry_file: str, r_cutoff: float) -> Tuple[jnp.float32, jnp.float32, jnp.float32]:
@@ -80,9 +63,8 @@ def get_params(torch_model_file: str) -> Dict:
 
     params = {}
     params['SchNet/~/embeddings'] = {}
-    params['SchNet/~/embeddings']['embeddings']= torch_model['representation.embedding.weight'].cpu().numpy()
+    params['SchNet/~/embeddings']['embeddings'] = torch_model['representation.embedding.weight'].cpu().numpy()
 
     return to_haiku_dict(params)
-
 
 # get_params("schnet/model_n1.torch")
