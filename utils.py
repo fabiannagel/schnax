@@ -13,7 +13,7 @@ import jax.numpy as jnp
 import jax_md
 
 
-def compute_nl_distances(displacement_fn, R: jnp.ndarray, neighbors: NeighborList, dimension_wise=False, **kwargs):
+def compute_nl_distances(displacement_fn: DisplacementFn, R: jnp.ndarray, neighbors: NeighborList, dimension_wise=False, **kwargs):
     """Compute interatomic distances for a matrix of atomic distances and their neighbor list indices."""
     d = partial(displacement_fn, **kwargs)
     d = jax_md.space.map_neighbor(d)

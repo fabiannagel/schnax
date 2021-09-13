@@ -1,14 +1,7 @@
-from functools import partial
-from typing import OrderedDict, List, Dict
-
-import torch
 import haiku as hk
 from jax_md.energy import DisplacementFn, Box
-from schnetpack import Properties
-
 import utils
 import jax_md
-import numpy as np
 import jax.numpy as jnp
 import jax
 
@@ -59,7 +52,7 @@ def schnet_neighbor_list(displacement_fn: DisplacementFn,
         box_size,
         r_cutoff,
         dr_threshold,
-        capacity_multiplier=1.0,
+        capacity_multiplier=0.625,
         mask_self=False,
         fractional_coordinates=False)
 
@@ -91,5 +84,6 @@ def predict(geometry_file: str):
     return pred
 
 
-energy = predict("schnet/geometry.in")
-print("feature_vectors.shape={}".format(energy.shape))
+if __name__ == '__main__':
+    energy = predict("schnet/geometry.in")
+    print("feature_vectors.shape={}".format(energy.shape))
