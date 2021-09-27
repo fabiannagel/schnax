@@ -1,5 +1,7 @@
 import haiku as hk
 from jax_md.energy import DisplacementFn, Box
+from jax_md.partition import NeighborList
+
 import utils
 import jax_md
 import jax.numpy as jnp
@@ -25,6 +27,7 @@ class Schnax(hk.Module):
     def __call__(self, dR: jnp.ndarray, Z: jnp.ndarray, *args, **kwargs) -> jnp.ndarray:
         # get embedding for Z
         x = self.embedding(Z)
+        hk.set_state("embedding", x)
 
         # expand interatomic distances (for example, Gaussian smearing)
         # dR = self.distance_expansion(dR)
@@ -33,19 +36,27 @@ class Schnax(hk.Module):
         return x
 
 
+def _get_model(displacement_fn: DisplacementFn, r_cutoff: float):
+    """Moved to dedicated method for better testing access."""
+
+    @hk.without_apply_rng
+    @hk.transform_with_state
+    def model(R: jnp.ndarray, Z: jnp.int32, neighbors: jnp.ndarray, **kwargs):
+        dR = utils.compute_nl_distances(displacement_fn, R, neighbors, **kwargs)
+
+        net = Schnax(r_cutoff)
+        return net(dR, Z)
+
+    return model
+
+
 """Convenience wrapper around Schnax"""
 def schnet_neighbor_list(displacement_fn: DisplacementFn,
                          box_size: Box,
                          r_cutoff: float,
                          dr_threshold: float):
 
-    @hk.without_apply_rng
-    @hk.transform
-    def model(R: jnp.ndarray, Z: jnp.int32, neighbors: jnp.ndarray, **kwargs):
-        dR = utils.compute_nl_distances(displacement_fn, R, neighbors, **kwargs)
-
-        net = Schnax(r_cutoff)
-        return net(dR, Z)
+    model = _get_model(displacement_fn, r_cutoff)
 
     neighbor_fn = jax_md.partition.neighbor_list(
         displacement_fn,
@@ -53,6 +64,7 @@ def schnet_neighbor_list(displacement_fn: DisplacementFn,
         r_cutoff,
         dr_threshold,
         capacity_multiplier=0.625,
+        # capacity_multiplier=1.0,
         mask_self=False,
         fractional_coordinates=False)
 
@@ -73,17 +85,21 @@ def predict(geometry_file: str):
     # compute neighbor list
     neighbors = neighbor_fn(R)
 
+
     # obtain PRNG key
     rng = jax.random.PRNGKey(0)
 
     # initialize model with a single example position and charge
     # we won't need these params as we will load the PyTorch model instead.
-    _ = init_fn(rng, R, Z, neighbors)
+    # init_params = init_fn(rng, R, Z, neighbors)
+    init_params, state = init_fn(rng, R, Z, neighbors)
 
-    pred = apply_fn(params, R, Z, neighbors)
-    return pred
+    pred, state = apply_fn(params, state, R, Z, neighbors)
+
+    return pred, state
 
 
 if __name__ == '__main__':
-    energy = predict("schnet/geometry.in")
-    print("feature_vectors.shape={}".format(energy.shape))
+    pred, state = predict("schnet/geometry.in")
+    print(state)
+    # print("output.shape={}".format(output.shape))
