@@ -75,12 +75,21 @@ class DistancesTest(TestCase):
             neighbor_mask=inputs['_neighbor_mask']
         )
 
-        return R, nl, dR[0]
+        return R, nl, dR[0].numpy()
 
     def initialize_schnax(self):
         _, __, ___, (R, ____), neighbors, displacement_fn = test_utils.initialize_schnax()
+
+        # constructing the NL with mask_self=True pads an *already existing* self-reference,
+        # causing a padding index at position 0. sort in ascending order to move it to the end.
+        sorted_indices = np.argsort(neighbors.idx, axis=1)
+        nl = np.take_along_axis(neighbors.idx, sorted_indices, axis=1)
+
+        # compute distances and apply the same reordering
         dR = utils.compute_distances_vectorized(R, neighbors, displacement_fn)
-        return R, neighbors.idx, dR
+        dR = np.take_along_axis(dR, sorted_indices, axis=1)
+
+        return np.array(R), nl, dR
 
     def test_position_equality(self):
         self.assertEqual(self.schnet_R.shape, self.schnax_R.shape)
@@ -92,22 +101,15 @@ class DistancesTest(TestCase):
     def test_neighborhood_equality(self):
         """Asserts that every atom indices the same neighboring atoms in both neighbor list implementations."""
 
-        schnet_nl = self.schnet_nl
-
-
         # we need to replace 0-padding with shape[0] to match JAX-MD's convention.
         # but at this point, we have both paddings with 0 as well as actual zero-valued indices!
 
         # as we sorted the neighbor list in ascending order in MockEnvironmentProvider, any padding zeros will be at a neighborhood's end.
         # if there is an actual index 0 within the neighbor list, it has to be at position 0.
-
         # thus, we should be safe if we replace all zeros beyond the 0-th position with shape[0] to match JAX-MD's NL convention.
 
-        # there can be only padding at position 0 if EVERYTHING in this neighborhood is padding.
-
-
-        mask = schnet_nl == 0
-        only_padding_neighborhood = np.all(schnet_nl == 0, axis=1)
+        mask = self.schnet_nl == 0
+        only_padding_neighborhood = np.all(self.schnet_nl == 0, axis=1)
 
         # as we sorted in ascendingly before, the first index cannot be padding. override mask to False.
         # rare exception: there is at least one "neighborhood" which entirely consists out of padding.
@@ -118,56 +120,33 @@ class DistancesTest(TestCase):
         else:
             raise RuntimeError("Test not designed for sparse neighborhoods (see comments).")
 
-        schnet_nl[mask] = schnet_nl.shape[0]
+        self.schnet_nl[mask] = self.schnet_nl.shape[0]
 
+        for i, (neighbor_indices_schnet, neighbor_indices_schnax) in enumerate(zip(self.schnet_nl, self.schnax_nl)):
+            try:
+                if not np.all(neighbor_indices_schnet == neighbor_indices_schnax):
+                    print("break")
 
+                np.testing.assert_equal(neighbor_indices_schnet, neighbor_indices_schnax)
 
-        schnax_nl = self.schnax_nl.idx
+            except AssertionError:
+                self.fail()
 
-        # if mask_self=True, the reference atom is not considered a neighbor to itself.
-        # thus, schnax_nl[0] will be padded by R.shape[0] (the numerically largest index).
-        # but to match SchNetPack's convention, we want all padding at the end.
-        schnax_nl = np.sort(schnax_nl, axis=1)
+            # everything looks good apart from only 3 neighborhoods.
+            # within these neighborhoods, only a single neighbor index is different.
+            # schnet considers those a regular neighbor, whereas schnax applies padding.
 
-
-        for i, (neighbor_indices_schnet, neighbor_indices_schnax) in enumerate(zip(schnet_nl, schnax_nl)):
-
-            if not np.all(neighbor_indices_schnet == neighbor_indices_schnax):
-
-                different_schnet_indices = list(set(neighbor_indices_schnet).difference(neighbor_indices_schnax))
-
-                # in 3 cases, the ASE NL contains one more neighbor than JAX-MD (which performs padding).
-                # it always seems to concern the last atom at idx = 95. suspicious!
-                # I debugged inside the actual ASE neighbor list code and it already occurs there.
-
-                # considered a neighbor by SchNet, padded by JAX-MD
-                # atom 3 -> 94
-                # atom 45 -> 95
-                # atom 71 -> 95
-
-                if len(different_schnet_indices) > 1:
-                    print("luckily never happens")
-
-
-                # TODO: Everything looks good apart from only 3 neighborhoods.
-                # within these neighborhoods, only a single neighbor index is different.
-                # schnet considers those a regular neighbor, whereas schnax applies padding.
-
-                # how does this happen?
-                # (1) as we don't apply the same re-ordering to the cell offsets in our MockProvider() yet,
-                #     an atom's position is probably mapped to a wrong replica cell. in reality, the atom is probably beyond the cutoff
-                #     and should not occur in the neighbor list
-
-                # (2) a rare edge case of numerical noise where the distance is every so slightly over the cutoff for schnax? 64 bits maybe?
-
-
-                # TODO:
-                # write down everything from scratch.
-                # - NL conventions in schnet and jax-md: ordering (vertical and horizontal), padding, self-reference
-                # - write down all transformation to equalize NL conventions
+            # considered a neighbor by SchNet, padded by JAX-MD
+            # atom 3 -> 94
+            # atom 45 -> 95
+            # atom 71 -> 95
 
     def test_distances_equality(self):
-        pass
 
+        for i, (dr_schnet, dr_schnax) in enumerate(zip(self.schnet_dR, self.schnax_dR)):
 
-
+            try:
+                np.testing.assert_allclose(dr_schnax, dr_schnet, rtol=self.rtol, atol=self.atol)
+            except AssertionError:
+                print("atom index = {}".format(i))
+                self.fail()
