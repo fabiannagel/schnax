@@ -10,13 +10,14 @@ from schnet.convert import get_converter
 from ase.io import read
 import jax
 import jax.numpy as jnp
-import jax_md
+from jax_md import space
 
 
+# TODO: Remove
 def compute_nl_distances(displacement_fn: DisplacementFn, R: jnp.ndarray, neighbors: NeighborList, dimension_wise=False, **kwargs):
     """Compute interatomic distances for a matrix of atomic distances and their neighbor list indices."""
     d = partial(displacement_fn, **kwargs)
-    d = jax_md.space.map_neighbor(d)
+    d = space.map_neighbor(d)
 
     R_neighbors = R[neighbors.idx]
     dR = d(R, R_neighbors)
@@ -31,7 +32,18 @@ def compute_nl_distances(displacement_fn: DisplacementFn, R: jnp.ndarray, neighb
     return dR_magnitudes
 
 
-def get_input(geometry_file: str, r_cutoff: float) -> Tuple[jnp.float32, jnp.float32, jnp.float32]:
+def compute_distances_vectorized(R: jnp.ndarray, neighbors: NeighborList, displacement_fn: DisplacementFn) -> jnp.ndarray:
+    R_neighbors = R[neighbors.idx]
+
+    nl_displacement_fn = space.map_neighbor(displacement_fn)
+    displacements = nl_displacement_fn(R, R_neighbors)
+    distances_with_padding = space.distance(displacements)
+
+    padding_mask = (neighbors.idx < R.shape[0])
+    distances_without_padding = distances_with_padding * padding_mask
+    return distances_without_padding
+
+def get_input(geometry_file="schnet/geometry.in", r_cutoff=5.0) -> Tuple[jnp.float32, jnp.float32, jnp.float32]:
     converter = get_converter(r_cutoff, device="cpu")
     atoms = read(geometry_file, format="aims")
     inputs = converter(atoms)

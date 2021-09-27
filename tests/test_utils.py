@@ -19,9 +19,9 @@ def initialize_schnax(geometry_file="../schnet/geometry.in", weights_file="../sc
         displacement_fn,
         box,
         r_cutoff,
-        dr_threshold=0.0,  # important, as the applied cutoff = r_cutoff + dr_threshold
+        dr_threshold=0.0,          # as the effective cutoff = r_cutoff + dr_threshold
         capacity_multiplier=0.98,  # to match shapes with SchNet
-        mask_self=True,
+        mask_self=True,            # an atom is not a neighbor of itself
         fractional_coordinates=False)
 
     # compute NL and distances
@@ -34,24 +34,31 @@ def initialize_schnax(geometry_file="../schnet/geometry.in", weights_file="../sc
     _, state = init_fn(rng, R, Z, neighbors)
     params = schnax_utils.get_params(weights_file)
 
-    return params, state, apply_fn, (R, Z), neighbors
+    return params, state, apply_fn, (R, Z), neighbors, displacement_fn
 
 
 def initialize_and_predict_schnax(geometry_file="../schnet/geometry.in", weights_file="../schnet/model_n1.torch", r_cutoff=5.0):
-    params, state, apply_fn, (R, Z), neighbors = initialize_schnax(geometry_file, weights_file, r_cutoff)
+    params, state, apply_fn, (R, Z), neighbors, _ = initialize_schnax(geometry_file, weights_file, r_cutoff)
     pred, state = apply_fn(params, state, R, Z, neighbors)
     return pred, state['SchNet']
 
 
+def get_schnet_input(geometry_file="../schnet/geometry.in", r_cutoff=5.0, mock_environment_provider=None):
+    atoms = read(geometry_file, format="aims")
+
+    if not mock_environment_provider:
+        converter = AtomsConverter(environment_provider=AseEnvironmentProvider(cutoff=r_cutoff), device="cpu")
+    else:
+        converter = AtomsConverter(environment_provider=mock_environment_provider, device="cpu")
+
+    return converter(atoms)
+
+
 def initialize_and_predict_schnet(geometry_file="../schnet/geometry.in", weights_file="../schnet/model_n1.torch", r_cutoff=5.0):
     layer_outputs = {}
-    device = "cpu"
+    inputs = get_schnet_input(geometry_file, r_cutoff)
 
-    converter = AtomsConverter(environment_provider=AseEnvironmentProvider(cutoff=r_cutoff), device=device)
-    atoms = read(geometry_file, format="aims")
-    inputs = converter(atoms)
-
-    model = load_model(weights_file, r_cutoff, device)
+    model = load_model(weights_file, r_cutoff, device="cpu")
     register_representation_layer_hooks(layer_outputs, model)
     register_output_layer_hooks(layer_outputs, model)
 
