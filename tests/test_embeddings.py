@@ -18,7 +18,7 @@ class EmbeddingsTest(TestCase):
         super().__init__(method_name)
 
     def setUp(self):
-        _, schnet_activations = test_utils.initialize_and_predict_schnet()
+        _, schnet_activations, __ = test_utils.initialize_and_predict_schnet()
         self.schnet_embeddings = schnet_activations['representation.embedding'][0].numpy()  # skip batches for now
 
         _, schnax_activations = test_utils.initialize_and_predict_schnax()
