@@ -39,9 +39,12 @@ def initialize_schnax(geometry_file="../schnet/geometry.in", weights_file="../sc
 
 
 def initialize_and_predict_schnax(geometry_file="../schnet/geometry.in", weights_file="../schnet/model_n1.torch", r_cutoff=5.0):
-    params, state, apply_fn, (R, Z), neighbors, _ = initialize_schnax(geometry_file, weights_file, r_cutoff)
+    params, state, apply_fn, (R, Z), neighbors, displacement_fn = initialize_schnax(geometry_file, weights_file, r_cutoff)
     pred, state = apply_fn(params, state, R, Z, neighbors)
-    return pred, state['SchNet']
+
+    inputs = (R, Z, neighbors, displacement_fn)
+    layer_outputs = state['SchNet']
+    return inputs, layer_outputs, pred
 
 
 def get_schnet_input(geometry_file="../schnet/geometry.in", r_cutoff=5.0, mock_environment_provider=None):

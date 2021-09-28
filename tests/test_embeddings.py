@@ -21,7 +21,7 @@ class EmbeddingsTest(TestCase):
         _, schnet_activations, __ = test_utils.initialize_and_predict_schnet()
         self.schnet_embeddings = schnet_activations['representation.embedding'][0].numpy()  # skip batches for now
 
-        _, schnax_activations = test_utils.initialize_and_predict_schnax()
+        _, schnax_activations, __ = test_utils.initialize_and_predict_schnax()
         self.schnax_embeddings = schnax_activations['embedding']
 
     def test_embeddings_shape_equality(self):
