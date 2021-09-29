@@ -1,7 +1,6 @@
 from unittest import TestCase
 from schnetpack.environment import AseEnvironmentProvider
 
-import utils
 import numpy as np
 
 from tests import test_utils
@@ -31,18 +30,10 @@ class DistancesTest(TestCase):
         return R, nl, dR
 
     def initialize_schnax(self):
-        inputs, schnax_activations, pred = test_utils.initialize_and_predict_schnax()
-        R, Z, neighbors, displacement_fn = inputs
-
-        # constructing the NL with mask_self=True pads an *already existing* self-reference,
-        # causing a padding index at position 0. sort in ascending order to move it to the end.
-        sorted_indices = np.argsort(neighbors.idx, axis=1)
-        nl = np.take_along_axis(neighbors.idx, sorted_indices, axis=1)
-
-        # compute distances and apply the same reordering
-        dR = utils.compute_distances_vectorized(R, neighbors, displacement_fn)
-        dR = np.take_along_axis(dR, sorted_indices, axis=1)
-
+        _, __, ___, (R, Z), neighbors, displacement_fn = test_utils.initialize_schnax()
+        # inputs, schnax_activations, pred = test_utils.initialize_and_predict_schnax()
+        # R, Z, neighbors, displacement_fn = inputs
+        nl, dR = test_utils.preprocess_schnax_nl(R, neighbors, displacement_fn)
         return np.array(R), nl, dR
 
     def test_position_equality(self):

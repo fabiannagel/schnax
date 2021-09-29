@@ -2,10 +2,13 @@ import jax
 import jax_md
 import numpy as np
 from ase.io import read
+from jax_md.partition import NeighborList
+from jax_md.space import DisplacementFn
 from schnetpack import AtomsConverter
 from schnetpack.environment import AseEnvironmentProvider
 
 import schnax
+import utils
 import utils as schnax_utils
 from schnet.layer_hooks import register_representation_layer_hooks, register_output_layer_hooks
 from schnet.model import load_model
@@ -103,3 +106,15 @@ class MockEnvironmentProvider:
                 sorted_offset[i][j] = matching_offset
 
         return neighborhood_idx, sorted_offset
+
+
+def preprocess_schnax_nl(R: np.ndarray, neighbors: NeighborList, displacement_fn: DisplacementFn):
+    # constructing the NL with mask_self=True pads an *already existing* self-reference,
+    # causing a padding index at position 0. sort in ascending order to move it to the end.
+    sorted_indices = np.argsort(neighbors.idx, axis=1)
+    nl = np.take_along_axis(neighbors.idx, sorted_indices, axis=1)
+
+    # compute distances and apply the same reordering
+    dR = utils.compute_distances_vectorized(R, neighbors, displacement_fn)
+    dR = np.take_along_axis(dR, sorted_indices, axis=1)
+    return nl, dR
