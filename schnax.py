@@ -21,7 +21,7 @@ class Schnax(hk.Module):
 
         self.embedding = hk.Embed(self.max_z, self.n_atom_basis, name="embeddings")       # TODO: Torch padding_idx missing in Haiku.
         # distances: let JAX-MD handle this
-        # self.distance_expansion = GaussianSmearing(0.0, self.r_cutoff, self.n_gaussians)
+        self.distance_expansion = GaussianSmearing(0.0, self.r_cutoff, self.n_gaussians)
         # TODO: interactions blocks
 
     def __call__(self, dR: jnp.ndarray, Z: jnp.ndarray, *args, **kwargs) -> jnp.ndarray:
@@ -30,7 +30,8 @@ class Schnax(hk.Module):
         hk.set_state("embedding", x)
 
         # expand interatomic distances (for example, Gaussian smearing)
-        # dR = self.distance_expansion(dR)
+        dR_expanded = self.distance_expansion(dR)
+        hk.set_state("distance_expansion", dR_expanded)
 
         # compute interactions
         return x
@@ -41,9 +42,9 @@ def _get_model(displacement_fn: DisplacementFn, r_cutoff: float):
 
     @hk.without_apply_rng
     @hk.transform_with_state
-    def model(R: jnp.ndarray, Z: jnp.int32, neighbors: jnp.ndarray, **kwargs):
-        dR = utils.compute_nl_distances(displacement_fn, R, neighbors, **kwargs)
-
+    def model(R: jnp.ndarray, Z: jnp.int32, neighbors: jnp.ndarray):
+        # dR = utils.compute_nl_distances(displacement_fn, R, neighbors)
+        dR = utils.compute_distances_vectorized(R, neighbors, displacement_fn)
         net = Schnax(r_cutoff)
         return net(dR, Z)
 
@@ -75,7 +76,7 @@ def schnet_neighbor_list(displacement_fn: DisplacementFn,
 def predict(geometry_file: str):
     r_cutoff = 5.0
     dr_threshold = 1.0
-    R, Z, box = utils.get_input(geometry_file, r_cutoff)
+    R, Z, box = utils.get_input(geometry_file)
     params = utils.get_params("schnet/model_n1.torch")
 
     displacement_fn, shift_fn = jax_md.space.periodic_general(box, fractional_coordinates=False)
