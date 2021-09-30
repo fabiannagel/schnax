@@ -1,35 +1,13 @@
-from functools import partial
-from typing import Dict, Tuple
+from typing import Dict
 
+import jax.numpy as jnp
+import numpy as np
 import torch
+from ase.io import read
 from haiku._src.data_structures import to_haiku_dict
+from jax_md import space
 from jax_md.energy import DisplacementFn
 from jax_md.partition import NeighborList
-
-from schnet.convert import get_converter
-from ase.io import read
-import jax
-import jax.numpy as jnp
-from jax_md import space
-
-
-# TODO: Remove
-def compute_nl_distances(displacement_fn: DisplacementFn, R: jnp.ndarray, neighbors: NeighborList, dimension_wise=False, **kwargs):
-    """Compute interatomic distances for a matrix of atomic distances and their neighbor list indices."""
-    d = partial(displacement_fn, **kwargs)
-    d = space.map_neighbor(d)
-
-    R_neighbors = R[neighbors.idx]
-    dR = d(R, R_neighbors)
-
-    if dimension_wise:
-        return dR
-
-    # reduce dimension-wise distances to vector magnitude
-    magnitude_fn = lambda x: jnp.sqrt(jnp.sum(x ** 2))
-    vectorized_fn = jax.vmap(jax.vmap(magnitude_fn, in_axes=0), in_axes=0)
-    dR_magnitudes = vectorized_fn(dR)
-    return dR_magnitudes
 
 
 def compute_distances_vectorized(R: jnp.ndarray, neighbors: NeighborList, displacement_fn: DisplacementFn) -> jnp.ndarray:
@@ -42,16 +20,6 @@ def compute_distances_vectorized(R: jnp.ndarray, neighbors: NeighborList, displa
     padding_mask = (neighbors.idx < R.shape[0])
     distances_without_padding = distances_with_padding * padding_mask
     return distances_without_padding
-
-def get_input(geometry_file="schnet/geometry.in", r_cutoff=5.0) -> Tuple[jnp.float32, jnp.float32, jnp.float32]:
-    converter = get_converter(r_cutoff, device="cpu")
-    atoms = read(geometry_file, format="aims")
-    inputs = converter(atoms)
-
-    box = jnp.float32(inputs['_cell'][0].numpy())
-    R = jnp.float32(inputs['_positions'][0].numpy())
-    Z = jnp.int32(inputs['_atomic_numbers'][0].numpy())
-    return R, Z, box
 
 
 def get_params(torch_model_file: str) -> Dict:
@@ -79,4 +47,10 @@ def get_params(torch_model_file: str) -> Dict:
 
     return to_haiku_dict(params)
 
-# get_params("schnet/model_n1.torch")
+
+def get_input(geometry_file: str):
+    atoms = read(geometry_file, format="aims")
+    R = atoms.positions.astype(np.float32)
+    Z = atoms.numbers.astype(np.int)
+    box = np.array(atoms.cell.array, dtype=np.float32)
+    return jnp.float32(R), jnp.int32(Z), jnp.float32(box)

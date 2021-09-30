@@ -2,6 +2,7 @@ import jax
 import jax_md
 import numpy as np
 from ase.io import read
+from jax import numpy as jnp
 from jax_md.partition import NeighborList
 from jax_md.space import DisplacementFn
 from schnetpack import AtomsConverter
@@ -9,45 +10,48 @@ from schnetpack.environment import AseEnvironmentProvider
 
 import schnax
 import utils
-import utils as schnax_utils
 from schnet.layer_hooks import register_representation_layer_hooks, register_output_layer_hooks
 from schnet.model import load_model
+from utils import get_input
 
 
-def initialize_schnax(geometry_file="../schnet/geometry.in", weights_file="../schnet/model_n1.torch", r_cutoff=5.0):
-    R, Z, box = schnax_utils.get_input(geometry_file, r_cutoff)
-
+def initialize_schnax(geometry_file="../schnet/geometry.in", r_cutoff=5.0, sort_nl_indices=False):
+    R, Z, box = get_input(geometry_file)
     displacement_fn, shift_fn = jax_md.space.periodic_general(box, fractional_coordinates=False)
 
     neighbor_fn = jax_md.partition.neighbor_list(
         displacement_fn,
         box,
         r_cutoff,
-        dr_threshold=0.0,          # as the effective cutoff = r_cutoff + dr_threshold
+        dr_threshold=0.0,  # as the effective cutoff = r_cutoff + dr_threshold
         capacity_multiplier=0.98,  # to match shapes with SchNet
-        mask_self=True,            # an atom is not a neighbor of itself
+        mask_self=True,  # an atom is not a neighbor of itself
         fractional_coordinates=False)
 
-    # compute NL and distances
     neighbors = neighbor_fn(R)
+    if sort_nl_indices:
+        neighbors = sort_schnax_nl(neighbors)
 
-    # setup haiku model
+    return R, Z, box, neighbors, displacement_fn
+
+
+def predict_schnax(R: jnp.ndarray, Z: jnp.ndarray, displacement_fn: DisplacementFn, neighbors: NeighborList, r_cutoff: float, weights_file="../schnet/model_n1.torch"):
     init_fn, apply_fn = schnax._get_model(displacement_fn, r_cutoff)
 
+    # get initial state and params from torch file
     rng = jax.random.PRNGKey(0)
     _, state = init_fn(rng, R, Z, neighbors)
-    params = schnax_utils.get_params(weights_file)
+    params = utils.get_params(weights_file)
 
-    return params, state, apply_fn, (R, Z), neighbors, displacement_fn
-
-
-def initialize_and_predict_schnax(geometry_file="../schnet/geometry.in", weights_file="../schnet/model_n1.torch", r_cutoff=5.0):
-    params, state, apply_fn, (R, Z), neighbors, displacement_fn = initialize_schnax(geometry_file, weights_file, r_cutoff)
+    # run forward pass and obtain intermediates
     pred, state = apply_fn(params, state, R, Z, neighbors)
-
-    inputs = (R, Z, neighbors, displacement_fn)
     layer_outputs = state['SchNet']
-    return inputs, layer_outputs, pred
+    return layer_outputs, pred
+
+
+def initialize_and_predict_schnax(geometry_file="../schnet/geometry.in", weights_file="../schnet/model_n1.torch", r_cutoff=5.0, sort_nl_indices=False):
+    R, Z, box, neighbors, displacement_fn = initialize_schnax(geometry_file, r_cutoff, sort_nl_indices)
+    return predict_schnax(R, Z, displacement_fn, neighbors, r_cutoff, weights_file)
 
 
 def get_schnet_input(geometry_file="../schnet/geometry.in", r_cutoff=5.0, mock_environment_provider=None):
@@ -108,13 +112,11 @@ class MockEnvironmentProvider:
         return neighborhood_idx, sorted_offset
 
 
-def preprocess_schnax_nl(R: np.ndarray, neighbors: NeighborList, displacement_fn: DisplacementFn):
+def sort_schnax_nl(neighbors: NeighborList) -> NeighborList:
     # constructing the NL with mask_self=True pads an *already existing* self-reference,
     # causing a padding index at position 0. sort in ascending order to move it to the end.
-    sorted_indices = np.argsort(neighbors.idx, axis=1)
-    nl = np.take_along_axis(neighbors.idx, sorted_indices, axis=1)
+    new_indices = np.sort(neighbors.idx, axis=1)
+    object.__setattr__(neighbors, 'idx', new_indices)
+    return neighbors
 
-    # compute distances and apply the same reordering
-    dR = utils.compute_distances_vectorized(R, neighbors, displacement_fn)
-    dR = np.take_along_axis(dR, sorted_indices, axis=1)
-    return nl, dR
+

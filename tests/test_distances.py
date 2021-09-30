@@ -3,6 +3,8 @@ from schnetpack.environment import AseEnvironmentProvider
 
 import numpy as np
 
+import schnax
+import utils
 from tests import test_utils
 from tests.test_utils import MockEnvironmentProvider
 
@@ -30,11 +32,9 @@ class DistancesTest(TestCase):
         return R, nl, dR
 
     def initialize_schnax(self):
-        _, __, ___, (R, Z), neighbors, displacement_fn = test_utils.initialize_schnax()
-        # inputs, schnax_activations, pred = test_utils.initialize_and_predict_schnax()
-        # R, Z, neighbors, displacement_fn = inputs
-        nl, dR = test_utils.preprocess_schnax_nl(R, neighbors, displacement_fn)
-        return np.array(R), nl, dR
+        R, Z, box, neighbors, displacement_fn = test_utils.initialize_schnax(r_cutoff=self.r_cutoff, sort_nl_indices=True)
+        dR = utils.compute_distances_vectorized(R, neighbors, displacement_fn)
+        return R, neighbors.idx, dR
 
     def test_position_equality(self):
         self.assertEqual(self.schnet_R.shape, self.schnax_R.shape)
