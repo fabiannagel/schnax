@@ -65,9 +65,14 @@ def get_schnet_input(geometry_file="../schnet/geometry.in", r_cutoff=5.0, mock_e
     return converter(atoms)
 
 
-def initialize_and_predict_schnet(geometry_file="../schnet/geometry.in", weights_file="../schnet/model_n1.torch", r_cutoff=5.0, mock_environment_provider=None):
+def initialize_and_predict_schnet(geometry_file="../schnet/geometry.in", weights_file="../schnet/model_n1.torch", r_cutoff=5.0, sort_nl_indices=False):
     layer_outputs = {}
-    inputs = get_schnet_input(geometry_file, r_cutoff, mock_environment_provider=mock_environment_provider)
+
+    mock_provider = None
+    if sort_nl_indices:
+        mock_provider = MockEnvironmentProvider(AseEnvironmentProvider(cutoff=r_cutoff))
+
+    inputs = get_schnet_input(geometry_file, r_cutoff, mock_environment_provider=mock_provider)
 
     model = load_model(weights_file, r_cutoff, device="cpu")
     register_representation_layer_hooks(layer_outputs, model)

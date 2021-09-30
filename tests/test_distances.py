@@ -22,9 +22,7 @@ class DistancesTest(TestCase):
         self.schnax_R, self.schnax_nl, self.schnax_dR = self.initialize_schnax()
 
     def initialize_schnet(self):
-        mock_provider = MockEnvironmentProvider(AseEnvironmentProvider(cutoff=self.r_cutoff))
-        inputs, schnet_activations, preds = test_utils.initialize_and_predict_schnet(mock_environment_provider=mock_provider)
-
+        inputs, schnet_activations, preds = test_utils.initialize_and_predict_schnet(sort_nl_indices=True)
         # skip batches for now
         R = inputs['_positions'][0].detach().numpy()
         nl = inputs['_neighbors'][0].detach().numpy()
@@ -85,6 +83,12 @@ class DistancesTest(TestCase):
             # atom 3 -> 94
             # atom 45 -> 95
             # atom 71 -> 95
+
+    def test_distances_metrics(self):
+        self.assertEqual(np.min(self.schnet_dR), np.min(self.schnax_dR))
+        self.assertEqual(np.max(self.schnet_dR), np.max(self.schnax_dR))
+        np.testing.assert_allclose(np.sum(self.schnet_dR), np.sum(self.schnax_dR), rtol=1e-3, atol=self.atol)
+
 
     def test_distances_equality(self):
         assertion_failed = False
