@@ -1,7 +1,7 @@
 import itertools
 import time
 
-from mnist import datasets
+from misc.mnist import datasets
 from jax import random, jit, grad
 import jax.numpy as jnp
 import numpy.random as npr

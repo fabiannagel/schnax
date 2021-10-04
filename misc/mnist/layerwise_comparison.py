@@ -1,9 +1,8 @@
 import numpy as np
 
 from datasets import load_test_data
-import mnist.haiku.layerwise_predict as haiku_classifier
-from mnist.stax.layerwise_predict import StaxClassifier
-from mnist.pytorch.layerwise_predict import TorchClassifier
+import misc.mnist.haiku.layerwise_predict as haiku_classifier
+from misc.mnist.pytorch.layerwise_predict import TorchClassifier
 
 # np.testing.assert_allcose() compares the difference between actual and desired to atol + rtol * abs(desired).
 rtol = 1e-6

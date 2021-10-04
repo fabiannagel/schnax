@@ -2,7 +2,7 @@ from typing import Dict, List
 
 import numpy as np
 import torch
-from mnist.pytorch.train import MLP as torch_MLP
+from misc.mnist.pytorch.train import MLP as torch_MLP
 
 
 class TorchClassifier:
