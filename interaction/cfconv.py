@@ -16,7 +16,7 @@ class CFConv(hk.Module):
         self.cutoff_network = cutoff_network
         self.aggregate = Aggregate(axis=axis, mean=normalize_filter)
 
-    def _reshape_y(self, neighbors, y):
+    def _reshape_y(self, y: jnp.ndarray, neighbors: NeighborList) -> jnp.ndarray:
         nbh_size = neighbors.idx.shape
 
         # (n_atoms, max_occupancy) -> (n_atoms * max_occupancy, 1)
@@ -46,13 +46,10 @@ class CFConv(hk.Module):
         if self.cutoff_network is not None:
             C = self.cutoff_network(dR)
             W = W * jnp.expand_dims(C, axis=-1)
-        else:
-            # TODO: Deal w/ this
-            pass
 
         # pass initial embeddings through dense layer. reshape y for element-wise multiplication by W.
         y = self.in2f(x)
-        y = self._reshape_y(neighbors, y)
+        y = self._reshape_y(y, neighbors)
 
         # element-wise multiplication, aggregation and dense output layer.
         y = y * W

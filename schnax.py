@@ -27,7 +27,7 @@ class Schnax(hk.Module):
         # distances: let JAX-MD handle this
         self.distance_expansion = GaussianSmearing(0.0, self.r_cutoff, self.n_gaussians)
         # TODO: multiple interactions blocks
-        self.interactions = Interaction(n_atom_basis=self.n_atom_basis, n_filters=self.n_filters, n_spatial_basis=self.n_gaussians)
+        self.interactions = Interaction(n_atom_basis=self.n_atom_basis, n_filters=self.n_filters, n_spatial_basis=self.n_gaussians, r_cutoff=r_cutoff)
 
     def __call__(self, dR: jnp.ndarray, Z: jnp.ndarray, neighbors: NeighborList, *args, **kwargs) -> jnp.ndarray:
         # get embedding for Z

@@ -3,12 +3,13 @@ import jax.numpy as jnp
 from jax_md.partition import NeighborList
 
 from interaction.cfconv import CFConv
+from interaction.hard_cutoff import HardCutoff
 from utils import shifted_softplus
 
 
 class Interaction(hk.Module):
 
-    def __init__(self, n_atom_basis: int, n_filters: int, n_spatial_basis: int):
+    def __init__(self, n_atom_basis: int, n_filters: int, n_spatial_basis: int, r_cutoff: float):
         super().__init__(name="Interaction")
 
         self.filter_network = hk.Sequential([
@@ -16,8 +17,7 @@ class Interaction(hk.Module):
             hk.Linear(n_filters)                        # n_filters -> n_filters
         ])
 
-        # TODO: cutoff network - do we need this?
-        self.cutoff_network = None
+        self.cutoff_network = HardCutoff(r_cutoff)
         self.cfconv = CFConv(n_atom_basis, n_filters, n_atom_basis, self.filter_network, self.cutoff_network, activation=shifted_softplus)
         self.dense = hk.Linear(n_atom_basis)
 
