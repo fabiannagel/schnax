@@ -3,23 +3,19 @@ import jax.numpy as jnp
 from jax_md.partition import NeighborList
 
 from interaction.cfconv import CFConv
+from interaction.filter_network import FilterNetwork
 from interaction.hard_cutoff import HardCutoff
 from utils import shifted_softplus
 
 
 class Interaction(hk.Module):
 
-    def __init__(self, n_atom_basis: int, n_filters: int, n_spatial_basis: int, r_cutoff: float):
-        super().__init__(name="Interaction")
-
-        self.filter_network = hk.Sequential([
-            hk.Linear(n_filters), shifted_softplus,     # n_spatial_basis -> n_filters
-            hk.Linear(n_filters)                        # n_filters -> n_filters
-        ])
-
+    def __init__(self, idx: int, n_atom_basis: int, n_filters: int, n_spatial_basis: int, r_cutoff: float):
+        super().__init__(name="Interaction_{}".format(idx))
+        self.filter_network = FilterNetwork(n_filters)
         self.cutoff_network = HardCutoff(r_cutoff)
         self.cfconv = CFConv(n_atom_basis, n_filters, n_atom_basis, self.filter_network, self.cutoff_network, activation=shifted_softplus)
-        self.dense = hk.Linear(n_atom_basis)
+        self.dense = hk.Linear(n_atom_basis, name="Output")
 
     def __call__(self, x: jnp.ndarray, dR: jnp.ndarray, neighbors: NeighborList, pairwise_mask: jnp.ndarray, dR_expanded=None):
         """Compute convolution block.

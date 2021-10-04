@@ -7,15 +7,15 @@ class Aggregate(hk.Module):
 
         Args:
             axis (int): axis along which pooling is done.
-            mean (bool, optional): if True, use average instead for sum pooling.
+            mean_pooling (bool, optional): if True, use average instead for sum pooling.
             keepdim (bool, optional): whether the output tensor has dim retained or not.
 
     """
 
-    def __init__(self, axis: int, mean=False, keepdim=True):
+    def __init__(self, axis: int, mean_pooling=False, keepdim=True):
         super().__init__(name="Aggregate")
         self.axis = axis
-        self.average = mean
+        self.mean_pooling = mean_pooling
         self.keepdim = keepdim
 
     def __call__(self, input: jnp.ndarray, mask=None):
@@ -27,7 +27,7 @@ class Aggregate(hk.Module):
         y = jnp.sum(input, self.axis)
 
         # compute average of input along axis
-        if self.average:
+        if self.mean_pooling:
 
             # get the number of items along axis
             if mask is not None:

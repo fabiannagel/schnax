@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from typing import Dict
 
 import jax.nn
@@ -32,20 +33,57 @@ def get_params(torch_model_file: str) -> Dict:
     # ['representation.embedding.weight',
     #  'representation.distance_expansion.width', 'representation.distance_expansion.offsets',
 
-    #  'representation.interactions.0.filter_network.0.weight',
-    #  'representation.interactions.0.filter_network.0.bias', 'representation.interactions.0.filter_network.1.weight',
-    #  'representation.interactions.0.filter_network.1.bias', 'representation.interactions.0.cutoff_network.cutoff',
-    #  'representation.interactions.0.cfconv.in2f.weight', 'representation.interactions.0.cfconv.f2out.weight',
-    #  'representation.interactions.0.cfconv.f2out.bias', 'representation.interactions.0.cfconv.filter_network.0.weight',
-    #  'representation.interactions.0.cfconv.filter_network.0.bias',
-    #  'representation.interactions.0.cfconv.filter_network.1.weight',
-    #  'representation.interactions.0.cfconv.filter_network.1.bias',
-    #  'representation.interactions.0.cfconv.cutoff_network.cutoff', 'representation.interactions.0.dense.weight',
+    #  'representation.interactions.0.filter_network.0.weight', 'representation.interactions.0.filter_network.0.bias',
+    #  'representation.interactions.0.filter_network.1.weight', 'representation.interactions.0.filter_network.1.bias',
+    #  'representation.interactions.0.cutoff_network.cutoff',
+    #
+    #  'representation.interactions.0.cfconv.in2f.weight',
+    #  'representation.interactions.0.cfconv.f2out.weight', 'representation.interactions.0.cfconv.f2out.bias',
+
+    # TODO: are these duplicates?
+    #  'representation.interactions.0.cfconv.filter_network.0.weight', 'representation.interactions.0.cfconv.filter_network.0.bias',
+    #  'representation.interactions.0.cfconv.filter_network.1.weight', 'representation.interactions.0.cfconv.filter_network.1.bias',
+    #
+    #  'representation.interactions.0.cfconv.cutoff_network.cutoff',
+    #  'representation.interactions.0.dense.weight',
     #  'representation.interactions.0.dense.bias']
 
+    get_pristine = lambda k: torch_model[k].cpu().numpy()
+    get_transposed = lambda k: get_pristine(k).T
     params = {}
-    params['SchNet/~/embeddings'] = {}
-    params['SchNet/~/embeddings']['embeddings'] = torch_model['representation.embedding.weight'].cpu().numpy()
+
+    params['SchNet/~/embeddings'] = {
+        'embeddings': get_pristine('representation.embedding.weight')   # special case for embeddings (no tranpose)
+    }
+
+    # interaction: filter network, first layer
+    params['SchNet/~/Interaction_0/~/FilterNetwork/~/linear_0'] = {
+        'w': get_transposed('representation.interactions.0.filter_network.0.weight'),
+        'b': get_pristine('representation.interactions.0.filter_network.0.bias')
+    }
+
+    # interaction: filter network, second layer
+    params['SchNet/~/Interaction_0/~/FilterNetwork/~/linear_1'] = {
+        'w': get_transposed('representation.interactions.0.filter_network.1.weight'),
+        'b': get_pristine('representation.interactions.0.filter_network.1.bias')
+    }
+
+    # interaction: cfconv, in2f layer
+    params['SchNet/~/Interaction_0/~/CFConv/~/in2f'] = {
+        'w': get_transposed('representation.interactions.0.cfconv.in2f.weight')
+    }
+
+    # interaction: cfconv, f2out layer
+    params['SchNet/~/Interaction_0/~/CFConv/~/f2out'] = {
+        'w': get_transposed('representation.interactions.0.cfconv.f2out.weight'),
+        'b': get_pristine('representation.interactions.0.cfconv.f2out.bias')
+    }
+
+    # # interaction: output layer
+    params['SchNet/~/Interaction_0/~/Output'] = {
+        'w': get_transposed('representation.interactions.0.dense.weight'),
+        'b': get_pristine('representation.interactions.0.dense.bias')
+    }
 
     return to_haiku_dict(params)
 
