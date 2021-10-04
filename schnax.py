@@ -8,12 +8,16 @@ import jax.numpy as jnp
 import jax
 
 from gaussian_smearing import GaussianSmearing
+from interaction.interaction import Interaction
 
 
 class Schnax(hk.Module):
     n_atom_basis = 128
     max_z = 100
     n_gaussians = 25
+
+    n_filters = 128
+    n_interactions = 1
 
     def __init__(self, r_cutoff: float):
         super().__init__(name="SchNet")
@@ -22,9 +26,10 @@ class Schnax(hk.Module):
         self.embedding = hk.Embed(self.max_z, self.n_atom_basis, name="embeddings")       # TODO: Torch padding_idx missing in Haiku.
         # distances: let JAX-MD handle this
         self.distance_expansion = GaussianSmearing(0.0, self.r_cutoff, self.n_gaussians)
-        # TODO: interactions blocks
+        # TODO: multiple interactions blocks
+        self.interactions = Interaction(n_atom_basis=self.n_atom_basis, n_filters=self.n_filters, n_spatial_basis=self.n_gaussians)
 
-    def __call__(self, dR: jnp.ndarray, Z: jnp.ndarray, *args, **kwargs) -> jnp.ndarray:
+    def __call__(self, dR: jnp.ndarray, Z: jnp.ndarray, neighbors: NeighborList, *args, **kwargs) -> jnp.ndarray:
         # get embedding for Z
         x = self.embedding(Z)
         hk.set_state("embedding", x)
@@ -34,6 +39,12 @@ class Schnax(hk.Module):
         hk.set_state("distance_expansion", dR_expanded)
 
         # compute interactions
+        pairwise_mask = None    # TODO: Figure out what this is
+
+        # TODO: Loop over number of interactions
+        v = self.interactions(x, dR, neighbors, pairwise_mask, dR_expanded)
+        x = x + v
+
         return x
 
 
@@ -46,7 +57,7 @@ def _get_model(displacement_fn: DisplacementFn, r_cutoff: float):
         # dR = utils.compute_nl_distances(displacement_fn, R, neighbors)
         dR = utils.compute_distances_vectorized(R, neighbors, displacement_fn)
         net = Schnax(r_cutoff)
-        return net(dR, Z)
+        return net(dR, Z, neighbors)
 
     return model
 

@@ -1,10 +1,12 @@
 from typing import Dict
 
+import jax.nn
 import jax.numpy as jnp
 import numpy as np
 import torch
 from ase.io import read
 from haiku._src.data_structures import to_haiku_dict
+from jax import numpy as jnp
 from jax_md import space
 from jax_md.energy import DisplacementFn
 from jax_md.partition import NeighborList
@@ -54,3 +56,7 @@ def get_input(geometry_file: str):
     Z = atoms.numbers.astype(np.int)
     box = np.array(atoms.cell.array, dtype=np.float32)
     return jnp.float32(R), jnp.int32(Z), jnp.float32(box)
+
+
+def shifted_softplus(x: jnp.ndarray) -> jnp.ndarray:
+    return jax.nn.softplus(x) - jnp.log(2.0)
