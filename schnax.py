@@ -47,7 +47,7 @@ class Schnax(hk.Module):
 
         for i, interaction in enumerate(self.interactions.layers):
             v = interaction(x, dR, neighbors, pairwise_mask, dR_expanded)
-            hk.set_state("interaction_{}".format(interaction.name), v)
+            hk.set_state(interaction.name, v)
             x = x + v
 
         return x
