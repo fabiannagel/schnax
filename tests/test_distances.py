@@ -84,6 +84,9 @@ class DistancesTest(TestCase):
             # atom 45 -> 95
             # atom 71 -> 95
 
+            # TODO: Check distances. are they close to cutoff range?
+            # TODO: symmetrical issues?
+
     def test_distances_metrics(self):
         self.assertEqual(np.min(self.schnet_dR), np.min(self.schnax_dR))
         self.assertEqual(np.max(self.schnet_dR), np.max(self.schnax_dR))
