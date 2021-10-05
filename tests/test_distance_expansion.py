@@ -9,12 +9,11 @@ from tests.test_utils import MockEnvironmentProvider
 
 class DistanceExpansionTest(unittest.TestCase):
     r_cutoff = 5.0
-    atol = 5 * 1e-6
-    rtol = 5 * 1e-6
+    atol = 1e-5
+    rtol = 1e-5
 
     def setUp(self):
-        mock_provider = MockEnvironmentProvider(AseEnvironmentProvider(cutoff=self.r_cutoff))
-        _, schnet_activations, __ = test_utils.initialize_and_predict_schnet(mock_environment_provider=mock_provider)
+        _, schnet_activations, __ = test_utils.initialize_and_predict_schnet(sort_nl_indices=True)
         self.schnet_expansions = schnet_activations['representation.distance_expansion'][0].numpy()     # skip batches for now
 
         schnax_activations, _ = test_utils.initialize_and_predict_schnax(r_cutoff=self.r_cutoff, sort_nl_indices=True)

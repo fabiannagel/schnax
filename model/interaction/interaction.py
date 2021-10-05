@@ -2,9 +2,12 @@ import haiku as hk
 import jax.numpy as jnp
 from jax_md.partition import NeighborList
 
-from interaction.cfconv import CFConv
-from interaction.filter_network import FilterNetwork
-from interaction.hard_cutoff import HardCutoff
+# from model.interaction.interaction import CFConv
+# from model.interaction.interaction import FilterNetwork
+# from model.interaction.interaction import HardCutoff
+from model.interaction.cfconv import CFConv
+from model.interaction.filter_network import FilterNetwork
+from model.interaction.hard_cutoff import HardCutoff
 from utils import shifted_softplus
 
 

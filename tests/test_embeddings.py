@@ -1,10 +1,6 @@
-from typing import Tuple
 from unittest import TestCase
-import jax_md
-import torch
 import numpy as np
 
-from schnax import Schnax
 from tests import test_utils
 
 

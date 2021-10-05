@@ -8,7 +8,7 @@ from jax_md.space import DisplacementFn
 from schnetpack import AtomsConverter
 from schnetpack.environment import AseEnvironmentProvider
 
-import schnax
+import energy
 import utils
 from schnet.layer_hooks import register_representation_layer_hooks, register_output_layer_hooks
 from schnet.model import load_model
@@ -36,7 +36,7 @@ def initialize_schnax(geometry_file="../schnet/geometry.in", r_cutoff=5.0, sort_
 
 
 def predict_schnax(R: jnp.ndarray, Z: jnp.ndarray, displacement_fn: DisplacementFn, neighbors: NeighborList, r_cutoff: float, weights_file="../schnet/model_n1.torch"):
-    init_fn, apply_fn = schnax._get_model(displacement_fn, r_cutoff)
+    init_fn, apply_fn = energy._get_model(displacement_fn, r_cutoff)
 
     # get initial state and params from torch file
     rng = jax.random.PRNGKey(0)
@@ -54,7 +54,7 @@ def initialize_and_predict_schnax(geometry_file="../schnet/geometry.in", weights
     return predict_schnax(R, Z, displacement_fn, neighbors, r_cutoff, weights_file)
 
 
-def get_schnet_input(geometry_file="../schnet/geometry.in", r_cutoff=5.0, mock_environment_provider=None):
+def initialize_schnet(geometry_file="../schnet/geometry.in", r_cutoff=5.0, mock_environment_provider=None):
     atoms = read(geometry_file, format="aims")
 
     if not mock_environment_provider:
@@ -72,7 +72,7 @@ def initialize_and_predict_schnet(geometry_file="../schnet/geometry.in", weights
     if sort_nl_indices:
         mock_provider = MockEnvironmentProvider(AseEnvironmentProvider(cutoff=r_cutoff))
 
-    inputs = get_schnet_input(geometry_file, r_cutoff, mock_environment_provider=mock_provider)
+    inputs = initialize_schnet(geometry_file, r_cutoff, mock_environment_provider=mock_provider)
 
     model = load_model(weights_file, r_cutoff, device="cpu")
     register_representation_layer_hooks(layer_outputs, model)

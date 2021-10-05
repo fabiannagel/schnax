@@ -4,12 +4,13 @@ import haiku as hk
 import jax.numpy as jnp
 from jax_md.partition import NeighborList
 
-from interaction.aggregate import Aggregate
+from model.interaction.aggregate import Aggregate
 
 
 class CFConv(hk.Module):
 
-    def __init__(self, n_in: int, n_filters: int, n_out: int, filter_network: Callable, cutoff_network: Callable, activation, normalize_filter=False, axis=1):
+    def __init__(self, n_in: int, n_filters: int, n_out: int, filter_network: Callable, cutoff_network: Callable,
+                 activation, normalize_filter=False, axis=1):
         super().__init__(name="CFConv")
 
         self.in2f = hk.Linear(n_filters, with_bias=False, name="in2f")

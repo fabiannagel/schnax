@@ -13,7 +13,7 @@ from jax_md.energy import DisplacementFn
 from jax_md.partition import NeighborList
 
 
-def compute_distances_vectorized(R: jnp.ndarray, neighbors: NeighborList, displacement_fn: DisplacementFn) -> jnp.ndarray:
+def compute_distances(R: jnp.ndarray, neighbors: NeighborList, displacement_fn: DisplacementFn) -> jnp.ndarray:
     R_neighbors = R[neighbors.idx]
 
     nl_displacement_fn = space.map_neighbor(displacement_fn)

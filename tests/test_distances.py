@@ -1,12 +1,9 @@
 from unittest import TestCase
-from schnetpack.environment import AseEnvironmentProvider
 
 import numpy as np
 
-import schnax
 import utils
 from tests import test_utils
-from tests.test_utils import MockEnvironmentProvider
 
 
 class DistancesTest(TestCase):
@@ -31,7 +28,7 @@ class DistancesTest(TestCase):
 
     def initialize_schnax(self):
         R, Z, box, neighbors, displacement_fn = test_utils.initialize_schnax(r_cutoff=self.r_cutoff, sort_nl_indices=True)
-        dR = utils.compute_distances_vectorized(R, neighbors, displacement_fn)
+        dR = utils.compute_distances(R, neighbors, displacement_fn)
         return R, neighbors.idx, dR
 
     def test_position_equality(self):
