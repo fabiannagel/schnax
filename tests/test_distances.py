@@ -1,10 +1,6 @@
 from unittest import TestCase
-
-import numpy as np
-
+import tests.test_utils.initialize as init
 import utils
-from tests import test_utils
-
 
 class DistancesTest(TestCase):
     r_cutoff = 5.0
@@ -19,7 +15,7 @@ class DistancesTest(TestCase):
         self.schnax_R, self.schnax_nl, self.schnax_dR = self.initialize_schnax()
 
     def initialize_schnet(self):
-        inputs, schnet_activations, preds = test_utils.initialize_and_predict_schnet(sort_nl_indices=True)
+        inputs, schnet_activations, preds = init.initialize_and_predict_schnet(sort_nl_indices=True)
         # skip batches for now
         R = inputs['_positions'][0].detach().numpy()
         nl = inputs['_neighbors'][0].detach().numpy()
@@ -27,7 +23,7 @@ class DistancesTest(TestCase):
         return R, nl, dR
 
     def initialize_schnax(self):
-        R, Z, box, neighbors, displacement_fn = test_utils.initialize_schnax(r_cutoff=self.r_cutoff, sort_nl_indices=True)
+        R, Z, box, neighbors, displacement_fn = init.initialize_schnax(r_cutoff=self.r_cutoff, sort_nl_indices=True)
         dR = utils.compute_distances(R, neighbors, displacement_fn)
         return R, neighbors.idx, dR
 
