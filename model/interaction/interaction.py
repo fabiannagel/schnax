@@ -2,12 +2,7 @@ import haiku as hk
 import jax.numpy as jnp
 from jax_md.partition import NeighborList
 
-# from model.interaction.interaction import CFConv
-# from model.interaction.interaction import FilterNetwork
-# from model.interaction.interaction import HardCutoff
 from model.interaction.cfconv import CFConv
-from model.interaction.filter_network import FilterNetwork
-from model.interaction.hard_cutoff import HardCutoff
 from utils import shifted_softplus
 
 
@@ -15,9 +10,7 @@ class Interaction(hk.Module):
 
     def __init__(self, idx: int, n_atom_basis: int, n_filters: int, n_spatial_basis: int, r_cutoff: float):
         super().__init__(name="Interaction_{}".format(idx))
-        self.filter_network = FilterNetwork(n_filters)
-        self.cutoff_network = HardCutoff(r_cutoff)
-        self.cfconv = CFConv(n_atom_basis, n_filters, n_atom_basis, self.filter_network, self.cutoff_network, activation=shifted_softplus)
+        self.cfconv = CFConv(n_filters, n_atom_basis, r_cutoff, activation=shifted_softplus)
         self.dense = hk.Linear(n_atom_basis, name="Output")
 
     def __call__(self, x: jnp.ndarray, dR: jnp.ndarray, neighbors: NeighborList, pairwise_mask: jnp.ndarray, dR_expanded=None):
@@ -37,5 +30,6 @@ class Interaction(hk.Module):
             """
         x = self.cfconv(x, dR, neighbors, pairwise_mask, dR_expanded)
         x = self.dense(x)
+        hk.set_state(self.dense.name, x)
         return x
 

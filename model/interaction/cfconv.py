@@ -1,24 +1,25 @@
-from typing import Callable
-
 import haiku as hk
 import jax.numpy as jnp
 from jax_md.partition import NeighborList
 
 from model.interaction.aggregate import Aggregate
+from model.interaction.filter_network import FilterNetwork
+from model.interaction.hard_cutoff import HardCutoff
 
 
 class CFConv(hk.Module):
 
-    def __init__(self, n_in: int, n_filters: int, n_out: int, filter_network: Callable, cutoff_network: Callable,
-                 activation, normalize_filter=False, axis=1):
+    def __init__(self, n_filters: int, n_out: int, r_cutoff: float, activation, normalize_filter=False, axis=1):
         super().__init__(name="CFConv")
+
+        self.filter_network = FilterNetwork(n_filters)
+        self.cutoff_network = HardCutoff(r_cutoff)
 
         self.in2f = hk.Linear(n_filters, with_bias=False, name="in2f")
         self.f2out = hk.Sequential([
             hk.Linear(n_out, with_bias=True, name="f2out"), activation
         ])
-        self.filter_network = filter_network
-        self.cutoff_network = cutoff_network
+
         self.aggregate = Aggregate(axis=axis, mean_pooling=normalize_filter)
 
     def _reshape_y(self, y: jnp.ndarray, neighbors: NeighborList) -> jnp.ndarray:
@@ -61,4 +62,6 @@ class CFConv(hk.Module):
         y = y * W
         y = self.aggregate(y, pairwise_mask)
         y = self.f2out(y)
+
+        hk.set_state(self.module_name, y)
         return y
