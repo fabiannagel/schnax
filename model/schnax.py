@@ -36,14 +36,13 @@ class Schnax(hk.Module):
 
         # expand interatomic distances
         dR_expanded = self.distance_expansion(dR)
-        hk.set_state("distance_expansion", dR_expanded)
+        # hk.set_state("distance_expansion", dR_expanded)
 
         # compute interactions
         pairwise_mask = None  # TODO: Figure out what this is
 
         for i, interaction in enumerate(self.interactions.layers):
             v = interaction(x, dR, neighbors, pairwise_mask, dR_expanded)
-            hk.set_state(interaction.name, v)
             x = x + v
 
         return x

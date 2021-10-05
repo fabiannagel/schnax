@@ -8,7 +8,6 @@ class GaussianSmearing(hk.Module):
         super().__init__(name="GaussianSmearing")
         self.offset = jnp.linspace(start, stop, n_gaussians)
         self.widths = (self.offset[1] - self.offset[0]) * jnp.ones_like(self.offset)
-
         # TODO: trainable
         self.centered = centered
 
@@ -33,4 +32,6 @@ class GaussianSmearing(hk.Module):
         return gauss
 
     def __call__(self, distances: jnp.ndarray, *args, **kwargs):
-        return self._smearing(distances)
+        smearing = self._smearing(distances)
+        hk.set_state(self.name, smearing)
+        return smearing

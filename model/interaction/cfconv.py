@@ -56,12 +56,15 @@ class CFConv(hk.Module):
 
         # pass initial embeddings through dense layer. reshape y for element-wise multiplication by W.
         y = self.in2f(x)
+        hk.set_state(self.in2f.name, y)
         y = self._reshape_y(y, neighbors)
 
         # element-wise multiplication, aggregation and dense output layer.
         y = y * W
         y = self.aggregate(y, pairwise_mask)
-        y = self.f2out(y)
+        hk.set_state(self.aggregate.name, y)
 
-        hk.set_state(self.module_name, y)
+        y = self.f2out(y)
+        hk.set_state(self.f2out.layers[0].name, y)
+
         return y

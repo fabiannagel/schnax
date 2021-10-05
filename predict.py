@@ -24,7 +24,6 @@ def predict(geometry_file: str):
     # we won't need these params as we will load the PyTorch model instead.
     # init_params = init_fn(rng, R, Z, neighbors)
     init_params, state = init_fn(rng, R, Z, neighbors)
-    print(list(init_params.keys()))
 
     params = utils.get_params("schnet/model_n1.torch")
     pred, state = apply_fn(params, state, R, Z, neighbors)

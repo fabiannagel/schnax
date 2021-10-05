@@ -10,4 +10,5 @@ class HardCutoff(hk.Module):
 
     def __call__(self, dR: jnp.ndarray):
         mask = (dR <= self.r_cutoff)
+        hk.set_state(self.name, mask)
         return mask

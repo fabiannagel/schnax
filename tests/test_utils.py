@@ -1,3 +1,5 @@
+from typing import Dict
+
 import jax
 import jax_md
 import numpy as np
@@ -45,8 +47,7 @@ def predict_schnax(R: jnp.ndarray, Z: jnp.ndarray, displacement_fn: Displacement
 
     # run forward pass and obtain intermediates
     pred, state = apply_fn(params, state, R, Z, neighbors)
-    layer_outputs = state['SchNet']
-    return layer_outputs, pred
+    return state, pred
 
 
 def initialize_and_predict_schnax(geometry_file="../schnet/geometry.in", weights_file="../schnet/model_n1.torch", r_cutoff=5.0, sort_nl_indices=False):
@@ -125,3 +126,26 @@ def sort_schnax_nl(neighbors: NeighborList) -> NeighborList:
     return neighbors
 
 
+# TODO: Do the same thing for retrieving PyTorch activations. Maybe as tuples (torch_activation, schnax_activation)?
+
+def get_embeddings(state: Dict):
+    return state['SchNet']['embedding']
+
+
+def get_distance_expansion(state: Dict):
+    return state['SchNet/~/GaussianSmearing']['GaussianSmearing']
+
+
+def get_interaction_output(state: Dict, interaction_block_idx=0):
+    k = 'SchNet/~/Interaction_{}'.format(interaction_block_idx)
+    return state[k]['Output']
+
+
+def get_cfconv_filters(state: Dict, interaction_block_idx=0):
+    k = 'SchNet/~/Interaction_{}/~/CFConv/~/FilterNetwork'.format(interaction_block_idx)
+    return state[k]['linear_0'], state[k]['linear_1']
+
+
+def get_cutoff_network(state: Dict, interaction_block_idx=0):
+    k = 'SchNet/~/Interaction_{}/~/CFConv/~/HardCutoff'.format(interaction_block_idx)
+    return state[k]['HardCutoff']
