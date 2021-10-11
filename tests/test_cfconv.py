@@ -6,8 +6,8 @@ import tests.test_utils.initialize as init
 import tests.test_utils.activation as activation
 
 
-class InteractionTest(TestCase):
-    """Asserts equal output of interactions blocks as wholes as well as individual layers.
+class CFConvTest(TestCase):
+    """Asserts equal output of cfconv blocks as wholes.
     To bypass the fact that input neighbor lists are still not 100% equal, we temporarily use SchNetPack's representation (adapted to JAX-MD's conventions).
     That way, we can test an interaction block without having to deal with errors cascading down from the distance layer.
 
@@ -56,7 +56,20 @@ class InteractionTest(TestCase):
         schnet_edR, schnax_edR = activation.get_distance_expansion(self.schnet_activations, self.schnax_activations)
         np.testing.assert_allclose(schnet_edR, schnax_edR, self.rtol, self.atol)
 
-    def test_interaction_block(self):
-        # TODO: use neighborhood mask/pairwise mask for cfconv layer in schnax (currently not the case)
-        schnet_interaction, schnax_interaction = activation.get_interaction_output(self.schnet_activations, self.schnax_activations, interaction_block_idx=0)
+    def test_filter_network(self):
+        schnet_interaction, schnax_interaction = activation.get_cfconv_filters(self.schnet_activations, self.schnax_activations, interaction_block_idx=0)
         np.testing.assert_allclose(schnet_interaction, schnax_interaction, self.rtol, self.atol)
+
+    def test_cutoff_network(self):
+        self.skipTest()
+
+    def test_in2f(self):
+        self.skipTest()
+
+    def test_aggregation(self):
+        # keep in mind: this is where the pairwise mask is first used.
+        self.skipTest()
+
+    def test_f2out(self):
+        # keep in mind: called after aggregation layer, thus also affected by pairwise mask.
+        self.skipTest()

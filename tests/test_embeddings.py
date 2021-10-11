@@ -1,8 +1,8 @@
 from unittest import TestCase
 import numpy as np
 
-import tests.test_utils.activation
-import tests.test_utils.initialize
+import tests.test_utils.activation as activation
+import tests.test_utils.initialize as init
 
 
 class EmbeddingsTest(TestCase):
@@ -15,11 +15,9 @@ class EmbeddingsTest(TestCase):
         super().__init__(method_name)
 
     def setUp(self):
-        _, schnet_activations, __ = tests.utils.initialize.initialize_and_predict_schnet()
-        self.schnet_embeddings = schnet_activations['representation.embedding'][0].numpy()  # skip batches for now
-
-        schnax_activations, _ = tests.utils.initialize.initialize_and_predict_schnax()
-        self.schnax_embeddings = tests.utils.activation.get_embeddings(schnax_activations)
+        _, schnet_activations, __ = init.initialize_and_predict_schnet()
+        schnax_activations, _ = init.initialize_and_predict_schnax()
+        self.schnet_embeddings, self.schnax_embeddings = activation.get_embeddings(schnet_activations, schnax_activations)
 
     def test_embeddings_shape_equality(self):
         self.assertEqual(self.schnet_embeddings.shape, (96, 128))

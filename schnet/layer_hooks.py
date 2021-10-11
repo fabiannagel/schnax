@@ -23,7 +23,6 @@ def register_representation_layer_hooks(layer_outputs: Dict, model: OrderedDict)
         base_name = "representation.interactions.{}.".format(interaction_network_idx)
 
         # cfconv layer
-        register_layer_hook(layer_outputs, interaction_network.filter_network, base_name + "filter_network.0")
         register_layer_hook(layer_outputs, interaction_network.filter_network, base_name + "filter_network.1")
         register_layer_hook(layer_outputs, interaction_network.cutoff_network, base_name + "cutoff_network")
         register_layer_hook(layer_outputs, interaction_network.cfconv.in2f, base_name + "cfconv.in2f")

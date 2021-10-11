@@ -1,15 +1,31 @@
-from typing import Dict
+from typing import Dict, Tuple
+import jax.numpy as jnp
+import numpy as np
+import torch
 
+
+def _dispatch_to_numpy(tensor: torch.tensor):
+    return tensor.cpu().numpy()[0]
 
 def get_embeddings(state: Dict):
     return state['SchNet']['embedding']
 
+def get_embeddings(schnet_activations: Dict, schnax_activations: Dict):
+    return schnet_activations['representation.embedding'][0].numpy(), \
+           schnax_activations['SchNet']['embedding']
 
 def get_distance_expansion(state: Dict):
     return state['SchNet/~/GaussianSmearing']['GaussianSmearing']
 
+def get_distance_expansion(schnet_activations: Dict, schnax_activations: Dict):
+    return schnet_activations['representation.distance_expansion'][0].numpy(), \
+           schnax_activations['SchNet/~/GaussianSmearing']['GaussianSmearing']
 
-def get_interaction_output(state: Dict, interaction_block_idx=0):
+
+def get_interaction_output(schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0):
+    k = 'representation.interactions.{}.dense'.format(interaction_block_idx)
+    a_schnet = schnet_activations[k][0]
+
     k = 'SchNet/~/Interaction_{}'.format(interaction_block_idx)
     return state[k]['Output']
 

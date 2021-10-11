@@ -13,10 +13,8 @@ class DistanceExpansionTest(unittest.TestCase):
 
     def setUp(self):
         _, schnet_activations, __ = init.initialize_and_predict_schnet(sort_nl_indices=True)
-        self.schnet_expansions = schnet_activations['representation.distance_expansion'][0].numpy()     # skip batches for now
-
         schnax_activations, _ = init.initialize_and_predict_schnax(r_cutoff=self.r_cutoff, sort_nl_indices=True)
-        self.schnax_expansions = activation.get_distance_expansion(schnax_activations)
+        self.schnet_expansions, self.schnax_expansions = activation.get_distance_expansion(schnet_activations, schnax_activations)
 
     def test_distance_expansion_equality(self):
         # fails at distance expansions coming from neighborhoods around R[3], R[45] and R[71].
