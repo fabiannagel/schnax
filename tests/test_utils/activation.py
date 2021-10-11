@@ -46,3 +46,14 @@ def get_cutoff_network(schnet_activations: Dict, schnax_activations: Dict, inter
 
     return schnet_cutoff, schnax_cutoff
 
+
+def get_in2f(schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0):
+    k = 'representation.interactions.{}.cfconv.in2f'.format(interaction_block_idx)
+    schnet_in2f = _dispatch_to_numpy(schnet_activations[k])
+
+    k = 'SchNet/~/Interaction_{}/~/CFConv'.format(interaction_block_idx)
+    schnax_in2f = schnax_activations[k]['in2f']
+
+    return schnet_in2f, schnax_in2f
+
+

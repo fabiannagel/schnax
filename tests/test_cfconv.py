@@ -65,7 +65,8 @@ class CFConvTest(TestCase):
         np.testing.assert_equal(schnet_cutoff, schnax_cutoff)
 
     def test_in2f(self):
-        self.skipTest()
+        schnet_in2f, schnax_in2f = activation.get_in2f(self.schnet_activations, self.schnax_activations, interaction_block_idx=0)
+        np.testing.assert_allclose(schnet_in2f, schnax_in2f, self.rtol, self.atol)
 
     def test_aggregation(self):
         # keep in mind: this is where the pairwise mask is first used.
