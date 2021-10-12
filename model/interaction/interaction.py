@@ -13,7 +13,7 @@ class Interaction(hk.Module):
         self.cfconv = CFConv(n_filters, n_atom_basis, r_cutoff, activation=shifted_softplus)
         self.dense = hk.Linear(n_atom_basis, name="Output")
 
-    def __call__(self, x: jnp.ndarray, dR: jnp.ndarray, neighbors: NeighborList, pairwise_mask: jnp.ndarray, dR_expanded=None):
+    def __call__(self, x: jnp.ndarray, dR: jnp.ndarray, neighbors: NeighborList, dR_expanded=None):
         """Compute convolution block.
 
                 Args:
@@ -28,7 +28,7 @@ class Interaction(hk.Module):
                     jnp.ndarray: block output with (N_a, n_out) shape.
 
             """
-        x = self.cfconv(x, dR, neighbors, pairwise_mask, dR_expanded)
+        x = self.cfconv(x, dR, neighbors, dR_expanded)
         x = self.dense(x)
         hk.set_state(self.dense.name, x)
         return x

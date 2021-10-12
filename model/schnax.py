@@ -53,10 +53,8 @@ class Schnax(hk.Module):
         # hk.set_state("distance_expansion", dR_expanded)
 
         # compute interactions
-        neighbor_mask = neighbors.idx < neighbors.idx.shape[0]
-
         for i, interaction in enumerate(self.interactions.layers):
-            v = interaction(x, dR, neighbors, neighbor_mask, dR_expanded)
+            v = interaction(x, dR, neighbors, dR_expanded)
             x = x + v
 
         # energy contributions

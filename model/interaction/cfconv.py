@@ -45,8 +45,7 @@ class CFConv(hk.Module):
         y = jnp.reshape(y, (nbh_size[0], nbh_size[1], -1))
         return y
 
-    def __call__(self, x: jnp.ndarray, dR: jnp.ndarray, neighbors: NeighborList, pairwise_mask: jnp.ndarray,
-                 dR_expanded: jnp.ndarray):
+    def __call__(self, x: jnp.ndarray, dR: jnp.ndarray, neighbors: NeighborList, dR_expanded: jnp.ndarray):
         if dR_expanded is None:
             # Insert a new dimension (size 1) at the last position
             # (n_atoms, max_occupancy) -> (n_atoms, max_occupancy, 1)
@@ -68,8 +67,9 @@ class CFConv(hk.Module):
         # element-wise multiplication, aggregation and dense output layer.
         y = y * W
 
-        actual_atom_indices_mask = neighbors.idx != neighbors.idx.shape[0]
-        y = self.aggregate(y, actual_atom_indices_mask)
+        # aggregate over neighborhoods, skip padded indices.
+        actual_indices_mask = neighbors.idx != neighbors.idx.shape[0]
+        y = self.aggregate(y, actual_indices_mask)
         hk.set_state(self.aggregate.name, y)
 
         y = self.f2out(y)
