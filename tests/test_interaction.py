@@ -17,8 +17,6 @@ class InteractionTest(TestCase):
     weights_file = "../schnet/model_n1.torch"
 
     r_cutoff = 5.0
-    atol = 1e-5
-    rtol = 1e-5
 
     def __init__(self, method_name: str):
         super().__init__(method_name)
@@ -54,9 +52,8 @@ class InteractionTest(TestCase):
         """Just a quick sanity check to see if we get approx. equal distance expansions when manually overriding schnax's NL."""
         # TODO once test_distances.py and test_distance_expansion.py are passing: Remove.
         schnet_edR, schnax_edR = activation.get_distance_expansion(self.schnet_activations, self.schnax_activations)
-        np.testing.assert_allclose(schnet_edR, schnax_edR, self.rtol, self.atol)
+        np.testing.assert_allclose(schnet_edR, schnax_edR, rtol=1e-5, atol=1e-5)
 
     def test_interaction_block(self):
-        # TODO: use neighborhood mask/pairwise mask for cfconv layer in schnax (currently not the case)
         schnet_interaction, schnax_interaction = activation.get_interaction_output(self.schnet_activations, self.schnax_activations, interaction_block_idx=0)
-        np.testing.assert_allclose(schnet_interaction, schnax_interaction, self.rtol, self.atol)
+        np.testing.assert_allclose(schnet_interaction, schnax_interaction, rtol=1e-5, atol=5 * 1e-5)
