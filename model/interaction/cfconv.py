@@ -22,12 +22,18 @@ class CFConv(hk.Module):
 
         self.aggregate = Aggregate(axis=axis, mean_pooling=normalize_filter)
 
-    def _reshape_y(self, y: jnp.ndarray, neighbors: NeighborList) -> jnp.ndarray:
+    @staticmethod
+    def _reshape_y(y: jnp.ndarray, neighbors: NeighborList) -> jnp.ndarray:
         nbh_size = neighbors.idx.shape
+
+        # use SchNetPack's 0-padding approach to obtain *exactly* the same results after this reshaping operation.
+        nbh_indices = neighbors.idx
+        # padding_mask = nbh_indices == nbh_indices.shape[0]
+        # nbh_indices[padding_mask] = 0
 
         # (n_atoms, max_occupancy) -> (n_atoms * max_occupancy, 1)
         # for batches, use shape (-1, nbh_size[1] * nbh_size[2], 1)
-        nbh = neighbors.idx.reshape((nbh_size[0] * nbh_size[1], 1))
+        nbh = nbh_indices.reshape((nbh_size[0] * nbh_size[1], 1))
 
         # (n_atoms * max_occupancy, 1) -> (n_atoms * max_occupancy, n_filters)
         nbh = jnp.tile(nbh, (1, y.shape[1]))
@@ -61,7 +67,9 @@ class CFConv(hk.Module):
 
         # element-wise multiplication, aggregation and dense output layer.
         y = y * W
-        y = self.aggregate(y, pairwise_mask)
+
+        actual_atom_indices_mask = neighbors.idx != neighbors.idx.shape[0]
+        y = self.aggregate(y, actual_atom_indices_mask)
         hk.set_state(self.aggregate.name, y)
 
         y = self.f2out(y)

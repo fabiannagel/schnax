@@ -57,3 +57,12 @@ def get_in2f(schnet_activations: Dict, schnax_activations: Dict, interaction_blo
     return schnet_in2f, schnax_in2f
 
 
+def get_aggregate(schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0):
+    k = 'representation.interactions.{}.cfconv.agg'.format(interaction_block_idx)
+    schnet_agg = _dispatch_to_numpy(schnet_activations[k])
+
+    k = 'SchNet/~/Interaction_{}/~/CFConv'.format(interaction_block_idx)
+    schnax_agg = schnax_activations[k]['Aggregate']
+
+    return schnet_agg, schnax_agg
+

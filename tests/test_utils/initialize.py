@@ -81,6 +81,7 @@ def initialize_and_predict_schnet(geometry_file="../schnet/geometry.in", weights
         mock_provider = MockEnvironmentProvider(AseEnvironmentProvider(cutoff=r_cutoff))
 
     inputs = initialize_schnet(geometry_file, r_cutoff, mock_environment_provider=mock_provider)
+    # inputs["_neighbor_mask"] = None
 
     model = load_model(weights_file, r_cutoff, device="cpu")
     register_representation_layer_hooks(layer_outputs, model)

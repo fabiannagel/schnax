@@ -27,6 +27,7 @@ def register_representation_layer_hooks(layer_outputs: Dict, model: OrderedDict)
         register_layer_hook(layer_outputs, interaction_network.cutoff_network, base_name + "cutoff_network")
         register_layer_hook(layer_outputs, interaction_network.cfconv.in2f, base_name + "cfconv.in2f")
         register_layer_hook(layer_outputs, interaction_network.cfconv.f2out, base_name + "cfconv.f2out")
+        register_layer_hook(layer_outputs, interaction_network.cfconv.agg, base_name + "cfconv.agg")
 
         # dense output layer
         register_layer_hook(layer_outputs, interaction_network.dense, base_name + "dense")
