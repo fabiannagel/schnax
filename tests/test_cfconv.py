@@ -130,5 +130,5 @@ class CFConvTest(TestCase):
         np.testing.assert_allclose(schnet_agg, schnax_agg, rtol=1e-6, atol=5 * 1e-5)
 
     def test_f2out(self):
-        # keep in mind: called after aggregation layer, thus also affected by pairwise mask.
-        self.skipTest("not implemented yet")
+        schnet_f2out, schnax_f2out = activation.get_f2out(self.schnet_activations, self.schnax_activations, interaction_block_idx=0)
+        np.testing.assert_allclose(schnet_f2out, schnax_f2out, rtol=1e-6, atol=5 * 1e-5)

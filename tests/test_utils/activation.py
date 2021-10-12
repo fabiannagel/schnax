@@ -66,3 +66,12 @@ def get_aggregate(schnet_activations: Dict, schnax_activations: Dict, interactio
 
     return schnet_agg, schnax_agg
 
+
+def get_f2out(schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0):
+    k = 'representation.interactions.{}.cfconv.f2out'.format(interaction_block_idx)
+    schnet_f2out = _dispatch_to_numpy(schnet_activations[k])
+
+    k = 'SchNet/~/Interaction_{}/~/CFConv'.format(interaction_block_idx)
+    schnax_f2out = schnax_activations[k]['f2out']
+
+    return schnet_f2out, schnax_f2out
