@@ -20,8 +20,6 @@ class CFConvTest(TestCase):
     weights_file = "../schnet/model_n1.torch"
 
     r_cutoff = 5.0
-    atol = 1e-5
-    rtol = 1e-5
 
     def __init__(self, method_name: str):
         super().__init__(method_name)
@@ -57,11 +55,11 @@ class CFConvTest(TestCase):
         """Just a quick sanity check to see if we get approx. equal distance expansions when manually overriding schnax's NL."""
         # TODO once test_distances.py and test_distance_expansion.py are passing: Remove.
         schnet_edR, schnax_edR = activation.get_distance_expansion(self.schnet_activations, self.schnax_activations)
-        np.testing.assert_allclose(schnet_edR, schnax_edR, self.rtol, self.atol)
+        np.testing.assert_allclose(schnet_edR, schnax_edR, rtol=1e-6, atol=5 * 1e-5)
 
     def test_filter_network(self):
         schnet_interaction, schnax_interaction = activation.get_cfconv_filters(self.schnet_activations, self.schnax_activations, interaction_block_idx=0)
-        np.testing.assert_allclose(schnet_interaction, schnax_interaction, self.rtol, self.atol)
+        np.testing.assert_allclose(schnet_interaction, schnax_interaction, rtol=1e-6, atol=5 * 1e-5)
 
     def test_cutoff_network(self):
         schnet_cutoff, schnax_cutoff = activation.get_cutoff_network(self.schnet_activations, self.schnax_activations, interaction_block_idx=0)
@@ -69,7 +67,7 @@ class CFConvTest(TestCase):
 
     def test_in2f(self):
         schnet_in2f, schnax_in2f = activation.get_in2f(self.schnet_activations, self.schnax_activations, interaction_block_idx=0)
-        np.testing.assert_allclose(schnet_in2f, schnax_in2f, self.rtol, self.atol)
+        np.testing.assert_allclose(schnet_in2f, schnax_in2f, rtol=1e-6, atol=1e-6)
 
     def test_reshaping_and_elementwise_product_equality(self):
         """Assert equality of reshaping logic and element-wise product (after in2f, before aggregation).
@@ -114,22 +112,22 @@ class CFConvTest(TestCase):
             return do_reshape(schnet_in2f, neighbors)
 
         schnet_in2f, schnax_in2f = activation.get_in2f(self.schnet_activations, self.schnax_activations, interaction_block_idx=0)
-        np.testing.assert_allclose(schnet_in2f, schnax_in2f, self.rtol, self.atol)
+        np.testing.assert_allclose(schnet_in2f, schnax_in2f, rtol=1e-6, atol=1e-6)
 
         schnet_in2f = schnet_reshape(schnet_in2f, self.schnax_neighbors)
         schnax_in2f = CFConv._reshape_y(schnax_in2f, self.schnax_neighbors)
-        np.testing.assert_allclose(schnet_in2f[0], schnax_in2f, self.rtol, self.atol)
+        np.testing.assert_allclose(schnet_in2f[0], schnax_in2f, rtol=1e-6, atol=1e-6)
 
         schnet_W, schnax_W = activation.get_cfconv_filters(self.schnet_activations, self.schnax_activations, interaction_block_idx=0)
         schnet_W = torch.tensor(schnet_W)[None, ...]    # add batches dimension
 
         schnet_y = schnet_in2f * schnet_W
         schnax_y = schnax_in2f * schnax_W
-        np.testing.assert_allclose(schnet_y[0], schnax_y, self.rtol, self.atol)
+        np.testing.assert_allclose(schnet_y[0], schnax_y, rtol=1e-6, atol=5 * 1e-5)
 
     def test_aggregate(self):
         schnet_agg, schnax_agg = activation.get_aggregate(self.schnet_activations, self.schnax_activations, interaction_block_idx=0)
-        np.testing.assert_allclose(schnet_agg, schnax_agg, rtol=self.rtol, atol=5 * 1e-5)
+        np.testing.assert_allclose(schnet_agg, schnax_agg, rtol=1e-6, atol=5 * 1e-5)
 
     def test_f2out(self):
         # keep in mind: called after aggregation layer, thus also affected by pairwise mask.
