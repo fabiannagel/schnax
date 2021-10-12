@@ -3,6 +3,8 @@ from jax_md.partition import NeighborList
 
 import jax.numpy as jnp
 
+from model.interaction.aggregate import Aggregate
+from utils import shifted_softplus
 from model.gaussian_smearing import GaussianSmearing
 from model.interaction.interaction import Interaction
 
@@ -15,6 +17,11 @@ class Schnax(hk.Module):
     n_filters = 128
     n_interactions = 1
 
+    mean = 0.0
+    stddev = 20.0
+
+    # config_atomwise = {'n_in': 128, 'mean': 0.0, 'stddev': 20.0, 'n_layers': 2, 'n_neurons': None}
+
     def __init__(self, r_cutoff: float):
         super().__init__(name="SchNet")
         self.embedding = hk.Embed(self.max_z, self.n_atom_basis, name="embeddings")  # TODO: Torch padding_idx missing in Haiku.
@@ -26,6 +33,13 @@ class Schnax(hk.Module):
                         r_cutoff=r_cutoff) for i in range(self.n_interactions)
         ])
 
+        self.atomwise = hk.nets.MLP(output_sizes=[64, 1], activation=shifted_softplus, name="atomwise")
+        self.aggregate = Aggregate(axis=0, mean_pooling=False)
+
+
+    @staticmethod
+    def standardize(yi: jnp.ndarray, mean: float, stddev: float):
+        return yi * stddev + mean
 
     def __call__(self, dR: jnp.ndarray, Z: jnp.ndarray, neighbors: NeighborList, *args, **kwargs) -> jnp.ndarray:
         # TODO: Move hk.set_state() calls into layer modules. Use self.name as key.
@@ -45,4 +59,8 @@ class Schnax(hk.Module):
             v = interaction(x, dR, neighbors, neighbor_mask, dR_expanded)
             x = x + v
 
-        return x
+        # energy contributions
+        yi = self.atomwise(x)
+        yi = self.standardize(yi, self.mean, self.stddev)
+        y = self.aggregate(yi)
+        return y, yi

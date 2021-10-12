@@ -32,4 +32,8 @@ def predict(geometry_file: str):
 
 if __name__ == '__main__':
     pred, state = predict('schnet/geometry.in')
-    print(pred.shape)
+
+    energy, energies = pred
+    print("e_pot = {} eV".format(energy))
+    print()
+    print("Energy contributions:\n {}".format(energies))

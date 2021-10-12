@@ -43,6 +43,9 @@ def get_params(torch_model_file: str) -> Dict:
     # interaction block // output layer
     set_params(layer_key='SchNet/~/Interaction_0/~/Output', weight_key='representation.interactions.0.dense.weight', bias_key='representation.interactions.0.dense.bias')
 
+    set_params(layer_key='SchNet/~/atomwise/~/linear_0', weight_key='output_modules.0.out_net.1.out_net.0.weight', bias_key='output_modules.0.out_net.1.out_net.0.bias')
+    set_params(layer_key='SchNet/~/atomwise/~/linear_1', weight_key='output_modules.0.out_net.1.out_net.1.weight', bias_key='output_modules.0.out_net.1.out_net.1.bias')
+
     return to_haiku_dict(params)
 
 
