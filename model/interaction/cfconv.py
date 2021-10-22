@@ -4,7 +4,7 @@ from jax_md.partition import NeighborList
 
 from model.interaction.aggregate import Aggregate
 from model.interaction.filter_network import FilterNetwork
-from model.interaction.hard_cutoff import HardCutoff
+from model.interaction.cosine_cutoff import CosineCutoff
 
 
 class CFConv(hk.Module):
@@ -13,7 +13,7 @@ class CFConv(hk.Module):
         super().__init__(name="CFConv")
 
         self.filter_network = FilterNetwork(n_filters)
-        self.cutoff_network = HardCutoff(r_cutoff)
+        self.cutoff_network = CosineCutoff(r_cutoff)
 
         self.in2f = hk.Linear(n_filters, with_bias=False, name="in2f")
         self.f2out = hk.Sequential([

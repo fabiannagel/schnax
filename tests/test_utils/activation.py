@@ -41,8 +41,8 @@ def get_cutoff_network(schnet_activations: Dict, schnax_activations: Dict, inter
     k = 'representation.interactions.{}.cutoff_network'.format(interaction_block_idx)
     schnet_cutoff = _dispatch_to_numpy(schnet_activations[k])
 
-    k = 'SchNet/~/Interaction_{}/~/CFConv/~/HardCutoff'.format(interaction_block_idx)
-    schnax_cutoff = schnax_activations[k]['HardCutoff']
+    k = 'SchNet/~/Interaction_{}/~/CFConv/~/CosineCutoff'.format(interaction_block_idx)
+    schnax_cutoff = schnax_activations[k]['CosineCutoff']
 
     return schnet_cutoff, schnax_cutoff
 
