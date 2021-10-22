@@ -6,6 +6,7 @@ import numpy as np
 import tests.test_utils.initialize as init
 import utils
 
+
 class DistancesTest(TestCase):
     r_cutoff = 5.0
     atol = 1e-6
@@ -35,8 +36,9 @@ class DistancesTest(TestCase):
         self.assertEqual(self.schnet_R.shape, self.schnax_R.shape)
         np.testing.assert_allclose(self.schnet_R, self.schnax_R, atol=self.atol, rtol=self.rtol)
 
-    def test_nl_shape_equality(self):
-        self.assertEqual(self.schnet_nl.shape, self.schnax_nl.shape)
+    def test_nl_shapes(self):
+        self.assertEqual((96, 48), self.schnet_nl.shape)
+        self.assertEqual((96, 61), self.schnax_nl.shape)
 
     def test_neighborhood_equality(self):
         """Asserts that every atom indices the same neighboring atoms in both neighbor list implementations."""
@@ -48,7 +50,7 @@ class DistancesTest(TestCase):
         for reference_atom_idx, (schnet_ngbhhood, schnax_ngbhhood) in enumerate(zip(self.schnet_nl, self.schnax_nl)):
 
             # loop over indices within a neighborhood. use fill values to account for different neighborhood sizes.
-            for neighbor_atom_idx, (schnet_idx, schnax_idx) in enumerate(zip_longest(schnet_ngbhhood, schnax_ngbhhood, fillvalue=-1)):
+            for position_in_neighborhood, (schnet_idx, schnax_idx) in enumerate(zip_longest(schnet_ngbhhood, schnax_ngbhhood, fillvalue=-1)):
 
                 # fill values should not affect schnax_nl;
                 # schnet_nl should have a smaller neighborhood size and require filling.
@@ -60,7 +62,7 @@ class DistancesTest(TestCase):
                 if not schnet_idx == schnax_idx:
 
                     # (1) In SchNetPack, a 0 is padding, if it does not occur at the neighborhoods 0-th position.
-                    if schnet_idx == 0 and neighbor_atom_idx > 0:
+                    if schnet_idx == 0 and position_in_neighborhood > 0:
                         # as long as schnax pads at the same position (using n_atoms), this is fine.
                         assert schnax_idx == self.schnax_nl.shape[0]
 
@@ -68,23 +70,24 @@ class DistancesTest(TestCase):
                     if schnet_idx != -1:
                         assert schnax_idx == self.schnax_nl.shape[0]
 
-
-    def test_distances_metrics(self):
-        self.assertEqual(np.min(self.schnet_dR), np.min(self.schnax_dR))
-        self.assertEqual(np.max(self.schnet_dR), np.max(self.schnax_dR))
-        np.testing.assert_allclose(np.sum(self.schnet_dR), np.sum(self.schnax_dR), rtol=1e-3, atol=self.atol)
-
     def test_distances_equality(self):
-        assertion_failed = False
+        # loop over neighborhoods
+        for reference_atom_idx, (schnet_ngbhhood, schnax_ngbhhood) in enumerate(zip(self.schnet_dR, self.schnax_dR)):
 
-        for i, (dr_schnet, dr_schnax) in enumerate(zip(self.schnet_dR, self.schnax_dR)):
+            # loop over distances within a neighborhood
+            for position_in_neighborhood, (schnet_dr, schnax_dr) in enumerate(zip_longest(schnet_ngbhhood, schnax_ngbhhood, fillvalue=-1)):
 
-            try:
-                np.testing.assert_allclose(dr_schnax, dr_schnet, rtol=self.rtol, atol=self.atol)
-            except AssertionError:
-                assertion_failed = True
-                print("atom index = {}".format(i))
-                pass
+                # fill values should not affect schnax distances
+                assert schnax_dr != -1
 
-        if assertion_failed:
-            self.fail()
+                try:
+                    np.testing.assert_allclose(schnet_dr, schnax_dr, rtol=self.rtol, atol=self.atol)
+
+                except AssertionError as ex:
+                    # this is fine, if we have
+                    # (1) encountered a fill value for schnet_dr
+                    # (2) schnax_dr is 0 since it comes from a padded index in the neighbor list.
+                    if schnet_dr == -1 and schnax_dr == 0 and self.schnax_nl[reference_atom_idx][position_in_neighborhood] == self.schnax_nl.shape[0]:
+                        continue
+
+                    raise ex
