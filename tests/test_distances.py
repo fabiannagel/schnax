@@ -1,4 +1,8 @@
+from itertools import zip_longest
 from unittest import TestCase
+
+import numpy as np
+
 import tests.test_utils.initialize as init
 import utils
 
@@ -37,54 +41,38 @@ class DistancesTest(TestCase):
     def test_neighborhood_equality(self):
         """Asserts that every atom indices the same neighboring atoms in both neighbor list implementations."""
 
-        # we need to replace 0-padding with shape[0] to match JAX-MD's convention.
-        # but at this point, we have both paddings with 0 as well as actual zero-valued indices!
+        # for the provided input data, we expect SchNetPack to default to a smaller neighborhood size than schnax.
+        assert self.schnet_nl.shape[1] < self.schnax_nl.shape[1]
 
-        # as we sorted the neighbor list in ascending order in MockEnvironmentProvider, any padding zeros will be at a neighborhood's end.
-        # if there is an actual index 0 within the neighbor list, it has to be at position 0.
-        # thus, we should be safe if we replace all zeros beyond the 0-th position with shape[0] to match JAX-MD's NL convention.
+        # loop over neighborhoods
+        for reference_atom_idx, (schnet_ngbhhood, schnax_ngbhhood) in enumerate(zip(self.schnet_nl, self.schnax_nl)):
 
-        mask = self.schnet_nl == 0
-        only_padding_neighborhood = np.all(self.schnet_nl == 0, axis=1)
+            # loop over indices within a neighborhood. use fill values to account for different neighborhood sizes.
+            for neighbor_atom_idx, (schnet_idx, schnax_idx) in enumerate(zip_longest(schnet_ngbhhood, schnax_ngbhhood, fillvalue=-1)):
 
-        # as we sorted in ascendingly before, the first index cannot be padding. override mask to False.
-        # rare exception: there is at least one "neighborhood" which entirely consists out of padding.
-        # in that case, we'd have to selectively override the mask per-neighborhood.
-        # however, with periodic materials, this is highly unlikely.
-        if not np.any(only_padding_neighborhood):
-            mask[:, 0] = False
-        else:
-            raise RuntimeError("Test not designed for sparse neighborhoods (see comments).")
+                # fill values should not affect schnax_nl;
+                # schnet_nl should have a smaller neighborhood size and require filling.
+                assert schnax_idx != -1
 
-        self.schnet_nl[mask] = self.schnet_nl.shape[0]
+                # mismatching indices within a neighborhood are acceptable if caused by
+                # (1) different numerical values used for padding
+                # (2) different neighborhood sizes, requiring fill values as we iterate over both neighborhoods.
+                if not schnet_idx == schnax_idx:
 
-        for i, (neighbor_indices_schnet, neighbor_indices_schnax) in enumerate(zip(self.schnet_nl, self.schnax_nl)):
-            try:
-                if not np.all(neighbor_indices_schnet == neighbor_indices_schnax):
-                    print("break")
+                    # (1) In SchNetPack, a 0 is padding, if it does not occur at the neighborhoods 0-th position.
+                    if schnet_idx == 0 and neighbor_atom_idx > 0:
+                        # as long as schnax pads at the same position (using n_atoms), this is fine.
+                        assert schnax_idx == self.schnax_nl.shape[0]
 
-                np.testing.assert_equal(neighbor_indices_schnet, neighbor_indices_schnax)
+                    # (2) SchNetPack fill values should only pairwise match with padding in schnax
+                    if schnet_idx != -1:
+                        assert schnax_idx == self.schnax_nl.shape[0]
 
-            except AssertionError:
-                self.fail()
-
-            # everything looks good apart from only 3 neighborhoods.
-            # within these neighborhoods, only a single neighbor index is different.
-            # schnet considers those a regular neighbor, whereas schnax applies padding.
-
-            # considered a neighbor by SchNet, padded by JAX-MD
-            # atom 3 -> 94
-            # atom 45 -> 95
-            # atom 71 -> 95
-
-            # TODO: Check distances. are they close to cutoff range?
-            # TODO: symmetrical issues?
 
     def test_distances_metrics(self):
         self.assertEqual(np.min(self.schnet_dR), np.min(self.schnax_dR))
         self.assertEqual(np.max(self.schnet_dR), np.max(self.schnax_dR))
         np.testing.assert_allclose(np.sum(self.schnet_dR), np.sum(self.schnax_dR), rtol=1e-3, atol=self.atol)
-
 
     def test_distances_equality(self):
         assertion_failed = False
