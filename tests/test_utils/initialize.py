@@ -25,7 +25,6 @@ def initialize_schnax(geometry_file="../schnet/geometry.in", r_cutoff=5.0, sort_
         box,
         r_cutoff,
         dr_threshold=0.0,  # as the effective cutoff = r_cutoff + dr_threshold
-        capacity_multiplier=0.98,  # to match shapes with SchNet
         mask_self=True,  # an atom is not a neighbor of itself
         fractional_coordinates=False)
 
@@ -64,7 +63,6 @@ def initialize_and_predict_schnax(geometry_file="../schnet/geometry.in", weights
 
 def initialize_schnet(geometry_file="../schnet/geometry.in", r_cutoff=5.0, mock_environment_provider=None):
     atoms = read(geometry_file, format="aims")
-
     if not mock_environment_provider:
         converter = AtomsConverter(environment_provider=AseEnvironmentProvider(cutoff=r_cutoff), device="cpu")
     else:
