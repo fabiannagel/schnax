@@ -1,6 +1,8 @@
 import jax
 import jax_md
+import jax.numpy as jnp
 
+import heat_flux
 import utils
 from energy import schnet_neighbor_list
 
@@ -28,10 +30,11 @@ def predict(geometry_file: str):
     params = utils.get_params("schnet/model_n1.torch")
     pred, state = apply_fn(params, state, R, Z, neighbors)
 
+    heat_flux.compute_naive(apply_fn, params, state, R, Z, neighbors, atoms)
     return pred, state
 
 
 if __name__ == '__main__':
     energies, state = predict('schnet/geometry.in')
-
-    print("e_pot = {} eV".format(energies))
+    energy = jnp.sum(energies)
+    print("e_pot = {} eV".format(energy))

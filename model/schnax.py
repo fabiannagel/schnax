@@ -64,7 +64,7 @@ class Schnax(hk.Module):
         yi = self.standardize(yi, self.mean, self.stddev)
 
         if self.per_atom:
-            return yi
+            return jnp.squeeze(yi)
 
         y = self.aggregate(yi)
         return y
