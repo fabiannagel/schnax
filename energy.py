@@ -28,11 +28,8 @@ def schnet_neighbor_list(displacement_fn: DisplacementFn, box_size: Box, r_cutof
         displacement_fn,
         box_size,
         r_cutoff,
-        dr_threshold,
-        capacity_multiplier=0.625,
-        # capacity_multiplier=1.0,
-        mask_self=False,
+        dr_threshold=dr_threshold,
+        mask_self=True,
         fractional_coordinates=False)
 
-    init_fn, apply_fn = model.init, model.apply
-    return neighbor_fn, init_fn, apply_fn
+    return neighbor_fn, model.init, model.apply

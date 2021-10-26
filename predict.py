@@ -7,12 +7,12 @@ from energy import schnet_neighbor_list
 
 def predict(geometry_file: str):
     r_cutoff = 5.0
-    dr_threshold = 1.0
+    dr_threshold = 0.0
     R, Z, box = utils.get_input(geometry_file)
 
     displacement_fn, shift_fn = jax_md.space.periodic_general(box, fractional_coordinates=False)
     neighbor_fn, init_fn, apply_fn = schnet_neighbor_list(displacement_fn, box, r_cutoff, dr_threshold)
-    apply_fn = jax.jit(apply_fn)
+    # apply_fn = jax.jit(apply_fn)
 
     # compute neighbor list
     neighbors = neighbor_fn(R)
