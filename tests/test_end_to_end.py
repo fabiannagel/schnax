@@ -28,7 +28,7 @@ class EndToEndTest(TestCase):
         self.schnax_forces = None   # TODO: Compute & compare forces
 
     def test_energy_equality(self):
-        np.testing.assert_allclose(self.schnet_energy, self.schnax_energy, rtol=self.rtol, atol=self.atol)
+        np.testing.assert_allclose(self.schnet_energy, self.schnax_energy, rtol=self.rtol, atol=2 * self.atol)
 
     def test_energies_equality(self):
         np.testing.assert_allclose(self.schnet_energies, self.schnax_energies, rtol=2 * self.rtol, atol=self.atol)
