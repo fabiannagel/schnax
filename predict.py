@@ -8,10 +8,10 @@ from energy import schnet_neighbor_list
 def predict(geometry_file: str):
     r_cutoff = 5.0
     dr_threshold = 0.0
-    R, Z, box = utils.get_input(geometry_file)
+    atoms, R, Z, box = utils.get_input(geometry_file, get_atoms=True)
 
     displacement_fn, shift_fn = jax_md.space.periodic_general(box, fractional_coordinates=False)
-    neighbor_fn, init_fn, apply_fn = schnet_neighbor_list(displacement_fn, box, r_cutoff, dr_threshold)
+    neighbor_fn, init_fn, apply_fn = schnet_neighbor_list(displacement_fn, box, r_cutoff, dr_threshold, per_atom=True)
     # apply_fn = jax.jit(apply_fn)
 
     # compute neighbor list
@@ -30,10 +30,8 @@ def predict(geometry_file: str):
 
     return pred, state
 
-if __name__ == '__main__':
-    pred, state = predict('schnet/geometry.in')
 
-    energy, energies = pred
-    print("e_pot = {} eV".format(energy))
-    print()
-    print("Energy contributions:\n {}".format(energies))
+if __name__ == '__main__':
+    energies, state = predict('schnet/geometry.in')
+
+    print("e_pot = {} eV".format(energies))

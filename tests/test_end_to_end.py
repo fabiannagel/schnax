@@ -22,13 +22,12 @@ class EndToEndTest(TestCase):
         self.schnet_energies = schnet_preds['energies'][0].detach().numpy()
         self.schnet_forces = schnet_preds['forces'][0].detach().numpy()
 
-        state, schnax_preds = init.initialize_and_predict_schnax(self.geometry_file, self.weights_file, self.r_cutoff)
-        self.schnax_energy = schnax_preds[0]
-        self.schnax_energies = schnax_preds[1]
-        self.schnax_forces = None   # TODO: Compute & compare forces
-
     def test_energy_equality(self):
-        np.testing.assert_allclose(self.schnet_energy, self.schnax_energy, rtol=self.rtol, atol=2 * self.atol)
+        state, schnax_energy = init.initialize_and_predict_schnax(self.geometry_file, self.weights_file, self.r_cutoff, per_atom=False)
+        np.testing.assert_allclose(self.schnet_energy, schnax_energy, rtol=6 * self.rtol, atol=self.atol)
 
     def test_energies_equality(self):
-        np.testing.assert_allclose(self.schnet_energies, self.schnax_energies, rtol=2 * self.rtol, atol=self.atol)
+        state, schnax_energies = init.initialize_and_predict_schnax(self.geometry_file, self.weights_file, self.r_cutoff, per_atom=True)
+        np.testing.assert_allclose(self.schnet_energies, schnax_energies, rtol=2 * self.rtol, atol=self.atol)
+
+    # TODO: Test forces

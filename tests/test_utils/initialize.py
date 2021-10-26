@@ -43,8 +43,9 @@ def sort_schnax_nl(neighbors: NeighborList) -> NeighborList:
     return neighbors
 
 
-def predict_schnax(R: jnp.ndarray, Z: jnp.ndarray, displacement_fn: DisplacementFn, neighbors: NeighborList, r_cutoff: float, weights_file="../schnet/model_n1.torch"):
-    init_fn, apply_fn = energy._get_model(displacement_fn, r_cutoff)
+def predict_schnax(R: jnp.ndarray, Z: jnp.ndarray, displacement_fn: DisplacementFn, neighbors: NeighborList,
+                   r_cutoff: float, weights_file="../schnet/model_n1.torch", per_atom=False):
+    init_fn, apply_fn = energy._get_model(displacement_fn, r_cutoff, per_atom)
 
     # get initial state and params from torch file
     rng = jax.random.PRNGKey(0)
@@ -56,9 +57,9 @@ def predict_schnax(R: jnp.ndarray, Z: jnp.ndarray, displacement_fn: Displacement
     return state, pred
 
 
-def initialize_and_predict_schnax(geometry_file="../schnet/geometry.in", weights_file="../schnet/model_n1.torch", r_cutoff=5.0, sort_nl_indices=False):
+def initialize_and_predict_schnax(geometry_file="../schnet/geometry.in", weights_file="../schnet/model_n1.torch", r_cutoff=5.0, sort_nl_indices=False, per_atom=False):
     R, Z, box, neighbors, displacement_fn = initialize_schnax(geometry_file, r_cutoff, sort_nl_indices)
-    return predict_schnax(R, Z, displacement_fn, neighbors, r_cutoff, weights_file)
+    return predict_schnax(R, Z, displacement_fn, neighbors, r_cutoff, weights_file, per_atom)
 
 
 def initialize_schnet(geometry_file="../schnet/geometry.in", r_cutoff=5.0, mock_environment_provider=None):

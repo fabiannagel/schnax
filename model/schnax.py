@@ -22,8 +22,10 @@ class Schnax(hk.Module):
 
     # config_atomwise = {'n_in': 128, 'mean': 0.0, 'stddev': 20.0, 'n_layers': 2, 'n_neurons': None}
 
-    def __init__(self, r_cutoff: float):
+    def __init__(self, r_cutoff: float, per_atom: bool):
         super().__init__(name="SchNet")
+        self.per_atom = per_atom
+
         self.embedding = hk.Embed(self.max_z, self.n_atom_basis, name="embeddings")  # TODO: Torch padding_idx missing in Haiku.
         self.distance_expansion = GaussianSmearing(0.0, r_cutoff, self.n_gaussians)
 
@@ -60,5 +62,9 @@ class Schnax(hk.Module):
         # energy contributions
         yi = self.atomwise(x)
         yi = self.standardize(yi, self.mean, self.stddev)
+
+        if self.per_atom:
+            return yi
+
         y = self.aggregate(yi)
-        return y, yi
+        return y
