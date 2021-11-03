@@ -1,9 +1,11 @@
 import timeit
 from functools import partial
-from typing import Callable
+from typing import Callable, Dict
 
+import matplotlib.pyplot as plt
 import jax
 import jax_md
+from matplotlib.ticker import MaxNLocator
 
 import heat_flux
 import utils
@@ -13,7 +15,8 @@ from energy import schnet_neighbor_list
 A simple benchmark to compare performance of heat flux implementations. 
 """
 
-executions = 2
+executions = 10
+results = {}
 
 
 def initialize_schnax():
@@ -57,25 +60,48 @@ def setup_forward_pass(jit: bool):
     return partial(block_fn, forward_pass_fn)
 
 
+def plot_results(results: Dict, save=True):
+    x = list(range(executions))
+    fig, ax = plt.subplots()
+
+    for name, y in results.items():
+        ax.plot(x, y, label=name, linestyle='dashed', marker='o', markersize=6)
+
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    plt.legend()
+    plt.xlabel("Consecutive executions")
+    plt.ylabel("Computation time [s]")
+    plt.yscale("log")
+    plt.show()
+    plt.savefig('heat_flux.png')
+
+
 # naive heat flux, jit=False
 naive_heat_flux_fn = setup_heat_flux_fn(heat_flux.compute_naive, jit=False)
 runtimes = timeit.repeat(naive_heat_flux_fn, repeat=executions, number=1)
 print("Naive heat flux (jit=False): {}".format(runtimes))
+results['Naive heat flux (jit=False)'] = runtimes
 # jit=False [7.930954971932806, 0.39774937299080193]
 
 # naive heat flux, jit=True
 naive_heat_flux_fn = setup_heat_flux_fn(heat_flux.compute_naive, jit=True)
 runtimes = timeit.repeat(naive_heat_flux_fn, repeat=executions, number=1)
 print("Naive heat flux (jit=True): {}".format(runtimes))
+results['Naive heat flux (jit=True)'] = runtimes
 # jit=True  [2.3618956330465153, 0.048938403953798115]
 
 # baseline: forward pass only, jit=False
 forward_pass_fn = setup_forward_pass(jit=False)
 runtimes = timeit.repeat(forward_pass_fn, repeat=executions, number=1)
 print("Baseline (forward pass only), jit=False: {}".format(runtimes))
+results['Forward pass only (jit=False)'] = runtimes
+
 # jit=False [0.06963449402246624, 0.03619032702408731]
 
 forward_pass_fn = setup_forward_pass(jit=True)
 runtimes = timeit.repeat(forward_pass_fn, repeat=executions, number=1)
 print("Baseline (forward pass only), jit=True: {}".format(runtimes))
+results['Forward pass only (jit=True)'] = runtimes
 # jit=True  [0.4182406410109252, 0.004909868002869189]
+
+plot_results(results)

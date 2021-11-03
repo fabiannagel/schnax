@@ -49,11 +49,15 @@ def get_params(torch_model_file: str) -> Dict:
     return to_haiku_dict(params)
 
 
-def get_input(geometry_file: str):
+def get_input(geometry_file: str, get_atoms=False):
     atoms = read(geometry_file, format="aims")
     R = atoms.positions.astype(np.float32)
     Z = atoms.numbers.astype(np.int)
     box = np.array(atoms.cell.array, dtype=np.float32)
+
+    if get_atoms:
+        return atoms, jnp.float32(R), jnp.int32(Z), jnp.float32(box)
+
     return jnp.float32(R), jnp.int32(Z), jnp.float32(box)
 
 
