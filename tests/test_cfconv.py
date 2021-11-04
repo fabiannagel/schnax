@@ -4,9 +4,11 @@ import numpy as np
 import torch
 from jax_md.partition import NeighborList
 import jax.numpy as jnp
-import tests.test_utils.initialize as init
-import tests.test_utils.activation as activation
-from model.interaction.cfconv import CFConv
+
+from schnax.model.interaction.cfconv import CFConv
+
+import test_utils.initialize as init
+import test_utils.activation as activation
 
 
 class CFConvTest(TestCase):
@@ -16,8 +18,9 @@ class CFConvTest(TestCase):
 
     TODO once test_distances.py and test_distance_expansion.py are passing: Use schnax's own NL.
     """
-    geometry_file = "../schnet/geometry.in"
-    weights_file = "../schnet/model_n1.torch"
+
+    geometry_file = "assets/geometry.in"
+    weights_file = "assets/model_n1.torch"
 
     r_cutoff = 5.0
     rtol = 1e-6
@@ -27,38 +30,47 @@ class CFConvTest(TestCase):
         super().__init__(method_name)
 
     def setUp(self):
-        _, self.schnet_activations, __ = init.initialize_and_predict_schnet(self.geometry_file,
-                                                                            self.weights_file,
-                                                                            self.r_cutoff, sort_nl_indices=True)
+        _, self.schnet_activations, __ = init.initialize_and_predict_schnet(
+            self.geometry_file, self.weights_file, self.r_cutoff, sort_nl_indices=True
+        )
 
         self.schnax_activations, self.schnax_neighbors = self.initialize_schnax()
 
     def initialize_schnax(self):
-        R, Z, box, neighbors, displacement_fn = init.initialize_schnax(self.geometry_file, self.r_cutoff, sort_nl_indices=True)
-        schnax_activations, _ = init.predict_schnax(R, Z, displacement_fn, neighbors, self.r_cutoff, self.weights_file)
+        R, Z, box, neighbors, displacement_fn = init.initialize_schnax(
+            self.geometry_file, self.r_cutoff, sort_nl_indices=True
+        )
+        schnax_activations, _ = init.predict_schnax(
+            R, Z, displacement_fn, neighbors, self.r_cutoff, self.weights_file
+        )
         return schnax_activations, neighbors
 
     def test_filter_network(self):
-        schnet_interaction, schnax_interaction = activation.get_cfconv_filters(self.schnet_activations,
-                                                                               self.schnax_activations,
-                                                                               interaction_block_idx=0)
+        schnet_interaction, schnax_interaction = activation.get_cfconv_filters(
+            self.schnet_activations, self.schnax_activations, interaction_block_idx=0
+        )
 
         relevant_schnax_interactions = schnax_interaction[:, 0:48, :]
-        np.testing.assert_allclose(schnet_interaction, relevant_schnax_interactions, rtol=1e-6, atol=3 * 1e-6)
+        np.testing.assert_allclose(
+            schnet_interaction, relevant_schnax_interactions, rtol=1e-6, atol=3 * 1e-6
+        )
 
     def test_cutoff_network(self):
-        schnet_cutoff, schnax_cutoff = activation.get_cutoff_network(self.schnet_activations, self.schnax_activations,
-                                                                     interaction_block_idx=0)
+        schnet_cutoff, schnax_cutoff = activation.get_cutoff_network(
+            self.schnet_activations, self.schnax_activations, interaction_block_idx=0
+        )
         self.assertEqual((96, 48), schnet_cutoff.shape)
         self.assertEqual((96, 61), schnax_cutoff.shape)
 
         relevant_schnax_cutoff = schnax_cutoff[:, 0:48]
-        np.testing.assert_allclose(schnet_cutoff, relevant_schnax_cutoff, rtol=self.rtol, atol=self.atol)
+        np.testing.assert_allclose(
+            schnet_cutoff, relevant_schnax_cutoff, rtol=self.rtol, atol=self.atol
+        )
 
     def test_in2f(self):
-        schnet_in2f, schnax_in2f = activation.get_in2f(self.schnet_activations,
-                                                       self.schnax_activations,
-                                                       interaction_block_idx=0)
+        schnet_in2f, schnax_in2f = activation.get_in2f(
+            self.schnet_activations, self.schnax_activations, interaction_block_idx=0
+        )
 
         np.testing.assert_allclose(schnet_in2f, schnax_in2f, rtol=1e-6, atol=1e-6)
 
@@ -84,6 +96,7 @@ class CFConvTest(TestCase):
                 Taken from schnetpack/nn/cfconv.py
                 """
                 import torch
+
                 nbh_size = neighbors.size()
 
                 # (n_batches, n_atoms, max_occupancy) -> (n_batches, n_atoms * max_occupancy, 1)
@@ -112,26 +125,44 @@ class CFConvTest(TestCase):
 
             return do_reshape(schnet_in2f, neighbors)
 
-        schnet_in2f, schnax_in2f = activation.get_in2f(self.schnet_activations, self.schnax_activations, interaction_block_idx=0)
-        np.testing.assert_allclose(schnet_in2f, schnax_in2f, rtol=self.rtol, atol=self.atol)
+        schnet_in2f, schnax_in2f = activation.get_in2f(
+            self.schnet_activations, self.schnax_activations, interaction_block_idx=0
+        )
+        np.testing.assert_allclose(
+            schnet_in2f, schnax_in2f, rtol=self.rtol, atol=self.atol
+        )
 
         schnet_in2f = schnet_reshape(schnet_in2f, self.schnax_neighbors)
         schnax_in2f = CFConv._reshape_y(schnax_in2f, self.schnax_neighbors)
-        np.testing.assert_allclose(schnet_in2f[0], schnax_in2f[:, 0:48], rtol=self.rtol, atol=self.atol)
+        np.testing.assert_allclose(
+            schnet_in2f[0], schnax_in2f[:, 0:48], rtol=self.rtol, atol=self.atol
+        )
 
-        schnet_W, schnax_W = activation.get_cfconv_filters(self.schnet_activations, self.schnax_activations, interaction_block_idx=0)
+        schnet_W, schnax_W = activation.get_cfconv_filters(
+            self.schnet_activations, self.schnax_activations, interaction_block_idx=0
+        )
         schnet_W = torch.tensor(schnet_W)[None, ...]  # add batches dimension
 
         schnet_y = schnet_in2f * schnet_W
         schnax_y = schnax_in2f * schnax_W
 
         # TODO: Test seems volatile. See above for improvements.
-        np.testing.assert_allclose(schnet_y[0], schnax_y[:, 0:48], rtol=1e-5, atol=8 * 1e-6)
+        np.testing.assert_allclose(
+            schnet_y[0], schnax_y[:, 0:48], rtol=1e-5, atol=8 * 1e-6
+        )
 
     def test_aggregate(self):
-        schnet_agg, schnax_agg = activation.get_aggregate(self.schnet_activations, self.schnax_activations, interaction_block_idx=0)
-        np.testing.assert_allclose(schnet_agg, schnax_agg, rtol=5 * self.rtol, atol=5 * self.atol)
+        schnet_agg, schnax_agg = activation.get_aggregate(
+            self.schnet_activations, self.schnax_activations, interaction_block_idx=0
+        )
+        np.testing.assert_allclose(
+            schnet_agg, schnax_agg, rtol=5 * self.rtol, atol=5 * self.atol
+        )
 
     def test_f2out(self):
-        schnet_f2out, schnax_f2out = activation.get_f2out(self.schnet_activations, self.schnax_activations, interaction_block_idx=0)
-        np.testing.assert_allclose(schnet_f2out, schnax_f2out, rtol=self.rtol, atol=2 * self.atol)
+        schnet_f2out, schnax_f2out = activation.get_f2out(
+            self.schnet_activations, self.schnax_activations, interaction_block_idx=0
+        )
+        np.testing.assert_allclose(
+            schnet_f2out, schnax_f2out, rtol=self.rtol, atol=2 * self.atol
+        )

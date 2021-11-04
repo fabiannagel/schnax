@@ -10,7 +10,9 @@ class MockEnvironmentProvider:
         self.environment_provider = environment_provider
 
     def get_environment(self, atoms, **kwargs):
-        neighborhood_idx, offset = self.environment_provider.get_environment(atoms, **kwargs)
+        neighborhood_idx, offset = self.environment_provider.get_environment(
+            atoms, **kwargs
+        )
 
         # replace -1 padding w/ atom count
         neighborhood_idx[neighborhood_idx == -1] = neighborhood_idx.shape[0]

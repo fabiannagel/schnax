@@ -9,16 +9,22 @@ def _dispatch_to_numpy(tensor: torch.tensor):
 
 
 def get_embeddings(schnet_activations: Dict, schnax_activations: Dict):
-    return schnet_activations['representation.embedding'][0].numpy(), \
-           schnax_activations['SchNet']['embedding']
+    return (
+        schnet_activations['representation.embedding'][0].numpy(),
+        schnax_activations['SchNet']['embedding'],
+    )
 
 
 def get_distance_expansion(schnet_activations: Dict, schnax_activations: Dict):
-    return schnet_activations['representation.distance_expansion'][0].numpy(), \
-           schnax_activations['SchNet/~/GaussianSmearing']['GaussianSmearing']
+    return (
+        schnet_activations['representation.distance_expansion'][0].numpy(),
+        schnax_activations['SchNet/~/GaussianSmearing']['GaussianSmearing'],
+    )
 
 
-def get_interaction_output(schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0):
+def get_interaction_output(
+    schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0
+):
     k = 'representation.interactions.{}.dense'.format(interaction_block_idx)
     a_schnet = schnet_activations[k][0]
 
@@ -27,7 +33,9 @@ def get_interaction_output(schnet_activations: Dict, schnax_activations: Dict, i
     return a_schnax, a_schnet
 
 
-def get_cfconv_filters(schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0):
+def get_cfconv_filters(
+    schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0
+):
     k = 'representation.interactions.{}.filter_network.1'.format(interaction_block_idx)
     a_schnet_1 = _dispatch_to_numpy(schnet_activations[k])
 
@@ -37,7 +45,9 @@ def get_cfconv_filters(schnet_activations: Dict, schnax_activations: Dict, inter
     return a_schnet_1, a_schnax_1
 
 
-def get_cutoff_network(schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0):
+def get_cutoff_network(
+    schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0
+):
     k = 'representation.interactions.{}.cutoff_network'.format(interaction_block_idx)
     schnet_cutoff = _dispatch_to_numpy(schnet_activations[k])
 
@@ -57,7 +67,9 @@ def get_in2f(schnet_activations: Dict, schnax_activations: Dict, interaction_blo
     return schnet_in2f, schnax_in2f
 
 
-def get_aggregate(schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0):
+def get_aggregate(
+    schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0
+):
     k = 'representation.interactions.{}.cfconv.agg'.format(interaction_block_idx)
     schnet_agg = _dispatch_to_numpy(schnet_activations[k])
 
@@ -67,7 +79,9 @@ def get_aggregate(schnet_activations: Dict, schnax_activations: Dict, interactio
     return schnet_agg, schnax_agg
 
 
-def get_f2out(schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0):
+def get_f2out(
+    schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0
+):
     k = 'representation.interactions.{}.cfconv.f2out'.format(interaction_block_idx)
     schnet_f2out = _dispatch_to_numpy(schnet_activations[k])
 
