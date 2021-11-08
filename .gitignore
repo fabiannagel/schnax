@@ -1,3 +1,4 @@
+poetry.lock
 
 # Created by https://www.toptal.com/developers/gitignore/api/macos,python,pycharm+all
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,python,pycharm+all
@@ -9,7 +10,8 @@
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
+
 
 # Thumbnails
 ._*

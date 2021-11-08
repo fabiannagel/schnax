@@ -8,17 +8,24 @@ from jax_md.space import DisplacementFn
 from schnetpack import AtomsConverter
 from schnetpack.environment import AseEnvironmentProvider
 
-import energy
-import utils
-from schnet.layer_hooks import register_representation_layer_hooks, register_output_layer_hooks
-from schnet.model import load_model
-from tests.test_utils.mock_environment_provider import MockEnvironmentProvider
-from utils import get_input
+from schnetkit import load
+
+from schnax import energy, utils
+from schnax.utils.layer_hooks import (
+    register_representation_layer_hooks,
+    register_output_layer_hooks,
+)
+from .mock_environment_provider import MockEnvironmentProvider
 
 
-def initialize_schnax(geometry_file="../schnet/geometry.in", r_cutoff=5.0, sort_nl_indices=False):
-    R, Z, box = get_input(geometry_file)
-    displacement_fn, shift_fn = jax_md.space.periodic_general(box, fractional_coordinates=False)
+def initialize_schnax(
+    geometry_file="assets/geometry.in", r_cutoff=5.0, sort_nl_indices=False
+):
+    atoms = read(geometry_file)
+    R, Z, box = utils.atoms_to_input(atoms)
+    displacement_fn, shift_fn = jax_md.space.periodic_general(
+        box, fractional_coordinates=False
+    )
 
     neighbor_fn = jax_md.partition.neighbor_list(
         displacement_fn,
@@ -26,7 +33,8 @@ def initialize_schnax(geometry_file="../schnet/geometry.in", r_cutoff=5.0, sort_
         r_cutoff,
         dr_threshold=0.0,  # as the effective cutoff = r_cutoff + dr_threshold
         mask_self=True,  # an atom is not a neighbor of itself
-        fractional_coordinates=False)
+        fractional_coordinates=False,
+    )
 
     neighbors = neighbor_fn(R)
     if sort_nl_indices:
@@ -43,8 +51,15 @@ def sort_schnax_nl(neighbors: NeighborList) -> NeighborList:
     return neighbors
 
 
-def predict_schnax(R: jnp.ndarray, Z: jnp.ndarray, displacement_fn: DisplacementFn, neighbors: NeighborList,
-                   r_cutoff: float, weights_file="../schnet/model_n1.torch", per_atom=False):
+def predict_schnax(
+    R: jnp.ndarray,
+    Z: jnp.ndarray,
+    displacement_fn: DisplacementFn,
+    neighbors: NeighborList,
+    r_cutoff: float,
+    weights_file="assets/model_n1.torch",
+    per_atom=False,
+):
     init_fn, apply_fn = energy._get_model(displacement_fn, r_cutoff, per_atom)
 
     # get initial state and params from torch file
@@ -57,32 +72,57 @@ def predict_schnax(R: jnp.ndarray, Z: jnp.ndarray, displacement_fn: Displacement
     return state, pred
 
 
-def initialize_and_predict_schnax(geometry_file="../schnet/geometry.in", weights_file="../schnet/model_n1.torch", r_cutoff=5.0, sort_nl_indices=False, per_atom=False):
-    R, Z, box, neighbors, displacement_fn = initialize_schnax(geometry_file, r_cutoff, sort_nl_indices)
-    return predict_schnax(R, Z, displacement_fn, neighbors, r_cutoff, weights_file, per_atom)
+def initialize_and_predict_schnax(
+    geometry_file="assets/geometry.in",
+    weights_file="assets/model_n1.torch",
+    r_cutoff=5.0,
+    sort_nl_indices=False,
+    per_atom=False,
+):
+    R, Z, box, neighbors, displacement_fn = initialize_schnax(
+        geometry_file, r_cutoff, sort_nl_indices
+    )
+    return predict_schnax(
+        R, Z, displacement_fn, neighbors, r_cutoff, weights_file, per_atom
+    )
 
 
-def initialize_schnet(geometry_file="../schnet/geometry.in", r_cutoff=5.0, mock_environment_provider=None):
+def get_schnet_inputs(
+    geometry_file="assets/geometry.in", r_cutoff=5.0, mock_environment_provider=None
+):
     atoms = read(geometry_file, format="aims")
     if not mock_environment_provider:
-        converter = AtomsConverter(environment_provider=AseEnvironmentProvider(cutoff=r_cutoff), device="cpu")
+        converter = AtomsConverter(
+            environment_provider=AseEnvironmentProvider(cutoff=r_cutoff), device="cpu"
+        )
     else:
-        converter = AtomsConverter(environment_provider=mock_environment_provider, device="cpu")
+        converter = AtomsConverter(
+            environment_provider=mock_environment_provider, device="cpu"
+        )
 
     return converter(atoms)
 
 
-def initialize_and_predict_schnet(geometry_file="../schnet/geometry.in", weights_file="../schnet/model_n1.torch", r_cutoff=5.0, sort_nl_indices=False):
+def initialize_and_predict_schnet(
+    geometry_file="assets/geometry.in",
+    weights_file="assets/model_n1.torch",
+    r_cutoff=5.0,
+    sort_nl_indices=False,
+):
     layer_outputs = {}
 
     mock_provider = None
     if sort_nl_indices:
         mock_provider = MockEnvironmentProvider(AseEnvironmentProvider(cutoff=r_cutoff))
 
-    inputs = initialize_schnet(geometry_file, r_cutoff, mock_environment_provider=mock_provider)
+    inputs = get_schnet_inputs(
+        geometry_file, r_cutoff, mock_environment_provider=mock_provider
+    )
     # inputs["_neighbor_mask"] = None
 
-    model = load_model(weights_file, r_cutoff, device="cpu")
+    model = load(weights_file)
+    assert model.cutoff == r_cutoff
+    model = model.model  # get raw schnetpack model without schnetkit wrapper
     register_representation_layer_hooks(layer_outputs, model)
     register_output_layer_hooks(layer_outputs, model)
 

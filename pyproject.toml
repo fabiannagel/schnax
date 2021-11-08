@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "schnax"
+version = "0.1.0"
+description = "schnet in jax"
+authors = ["Fabian Nagel <fabian.2.nagel@uni-konstanz.de>", "Marcel Langer <dev@marcel.science>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+jax_md =  { git = "https://github.com/google/jax-md.git", branch = "main" }
+schnetkit = { git = "https://github.com/sirmarcel/schnetkit.git", branch = "main" }
+ase = { git = "https://gitlab.com/ase/ase.git", branch = "master" }
+
+[tool.poetry.dev-dependencies]
+nose = "^1.3.7"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
