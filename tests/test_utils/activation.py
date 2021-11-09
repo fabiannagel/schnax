@@ -23,7 +23,7 @@ def get_distance_expansion(schnet_activations: Dict, schnax_activations: Dict):
 
 
 def get_interaction_output(
-    schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0
+    schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx: int
 ):
     k = 'representation.interactions.{}.dense'.format(interaction_block_idx)
     a_schnet = schnet_activations[k][0]
@@ -34,7 +34,7 @@ def get_interaction_output(
 
 
 def get_cfconv_filters(
-    schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0
+    schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx: int
 ):
     k = 'representation.interactions.{}.filter_network.1'.format(interaction_block_idx)
     a_schnet_1 = _dispatch_to_numpy(schnet_activations[k])
@@ -46,7 +46,7 @@ def get_cfconv_filters(
 
 
 def get_cutoff_network(
-    schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0
+    schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx: int
 ):
     k = 'representation.interactions.{}.cutoff_network'.format(interaction_block_idx)
     schnet_cutoff = _dispatch_to_numpy(schnet_activations[k])
@@ -57,7 +57,7 @@ def get_cutoff_network(
     return schnet_cutoff, schnax_cutoff
 
 
-def get_in2f(schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0):
+def get_in2f(schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx: int):
     k = 'representation.interactions.{}.cfconv.in2f'.format(interaction_block_idx)
     schnet_in2f = _dispatch_to_numpy(schnet_activations[k])
 
@@ -68,7 +68,7 @@ def get_in2f(schnet_activations: Dict, schnax_activations: Dict, interaction_blo
 
 
 def get_aggregate(
-    schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0
+    schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx: int
 ):
     k = 'representation.interactions.{}.cfconv.agg'.format(interaction_block_idx)
     schnet_agg = _dispatch_to_numpy(schnet_activations[k])
@@ -80,7 +80,7 @@ def get_aggregate(
 
 
 def get_f2out(
-    schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx=0
+    schnet_activations: Dict, schnax_activations: Dict, interaction_block_idx: int
 ):
     k = 'representation.interactions.{}.cfconv.f2out'.format(interaction_block_idx)
     schnet_f2out = _dispatch_to_numpy(schnet_activations[k])
