@@ -14,15 +14,15 @@ class SchNet(hk.Module):
     n_gaussians = 25
 
     n_filters = 128
-    n_interactions = 1
 
     mean = 0.0
     stddev = 20.0
 
     # config_atomwise = {'n_in': 128, 'mean': 0.0, 'stddev': 20.0, 'n_layers': 2, 'n_neurons': None}
 
-    def __init__(self, r_cutoff: float, per_atom: bool):
+    def __init__(self, r_cutoff: float, n_interactions: int, per_atom: bool):
         super().__init__(name="SchNet")
+        self.n_interactions = n_interactions
         self.per_atom = per_atom
 
         self.embedding = hk.Embed(

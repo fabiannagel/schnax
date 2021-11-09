@@ -15,6 +15,7 @@ from schnax.utils.layer_hooks import (
     register_representation_layer_hooks,
     register_output_layer_hooks,
 )
+from schnax.utils.schnetkit import get_interaction_count
 from .mock_environment_provider import MockEnvironmentProvider
 
 
@@ -60,7 +61,8 @@ def predict_schnax(
     weights_file="assets/model_n1.torch",
     per_atom=False,
 ):
-    init_fn, apply_fn = energy._get_model(displacement_fn, r_cutoff, per_atom)
+    n_interactions = get_interaction_count(weights_file)
+    init_fn, apply_fn = energy._get_model(displacement_fn, r_cutoff, n_interactions, per_atom)
 
     # get initial state and params from torch file
     rng = jax.random.PRNGKey(0)

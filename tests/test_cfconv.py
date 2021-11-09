@@ -9,25 +9,14 @@ from schnax.model.interaction.cfconv import CFConv
 
 import test_utils.initialize as init
 import test_utils.activation as activation
+from tests.interaction_test_case import InteractionTestCase
 
 
-class CFConvTest(TestCase):
-    """Asserts equal output of cfconv blocks as wholes.
-    To bypass the fact that input neighbor lists are still not 100% equal, we temporarily use SchNetPack's representation (adapted to JAX-MD's conventions).
-    That way, we can test an interaction block without having to deal with errors cascading down from the distance layer.
-
-    TODO once test_distances.py and test_distance_expansion.py are passing: Use schnax's own NL.
-    """
-
-    geometry_file = "assets/geometry.in"
-    weights_file = "assets/model_n1.torch"
-
+class CFConvTest(InteractionTestCase):
     r_cutoff = 5.0
-    rtol = 1e-6
-    atol = 1e-6
 
     def __init__(self, method_name: str):
-        super().__init__(method_name)
+        super().__init__(method_name, geometry_file="assets/geometry.in", weights_file="assets/model_n5.torch")
 
     def setUp(self):
         _, self.schnet_activations, __ = init.initialize_and_predict_schnet(
@@ -46,33 +35,36 @@ class CFConvTest(TestCase):
         return schnax_activations, neighbors
 
     def test_filter_network(self):
-        schnet_interaction, schnax_interaction = activation.get_cfconv_filters(
-            self.schnet_activations, self.schnax_activations, interaction_block_idx=0
-        )
+        for i in range(self.n_interactions):
+            schnet_interaction, schnax_interaction = activation.get_cfconv_filters(
+                self.schnet_activations, self.schnax_activations, interaction_block_idx=i
+            )
 
-        relevant_schnax_interactions = schnax_interaction[:, 0:48, :]
-        np.testing.assert_allclose(
-            schnet_interaction, relevant_schnax_interactions, rtol=1e-6, atol=3 * 1e-6
-        )
+            relevant_schnax_interactions = schnax_interaction[:, 0:48, :]
+            np.testing.assert_allclose(
+                schnet_interaction, relevant_schnax_interactions, rtol=1e-6, atol=3 * 1e-6
+            )
 
     def test_cutoff_network(self):
-        schnet_cutoff, schnax_cutoff = activation.get_cutoff_network(
-            self.schnet_activations, self.schnax_activations, interaction_block_idx=0
-        )
-        self.assertEqual((96, 48), schnet_cutoff.shape)
-        self.assertEqual((96, 60), schnax_cutoff.shape)
+        for i in range(self.n_interactions):
+            schnet_cutoff, schnax_cutoff = activation.get_cutoff_network(
+                self.schnet_activations, self.schnax_activations, interaction_block_idx=i
+            )
+            self.assertEqual((96, 48), schnet_cutoff.shape)
+            self.assertEqual((96, 60), schnax_cutoff.shape)
 
-        relevant_schnax_cutoff = schnax_cutoff[:, 0:48]
-        np.testing.assert_allclose(
-            schnet_cutoff, relevant_schnax_cutoff, rtol=self.rtol, atol=self.atol
-        )
+            relevant_schnax_cutoff = schnax_cutoff[:, 0:48]
+            np.testing.assert_allclose(
+                schnet_cutoff, relevant_schnax_cutoff, rtol=1e-6, atol=1e-6
+            )
 
     def test_in2f(self):
-        schnet_in2f, schnax_in2f = activation.get_in2f(
-            self.schnet_activations, self.schnax_activations, interaction_block_idx=0
-        )
+        for i in range(self.n_interactions):
+            schnet_in2f, schnax_in2f = activation.get_in2f(
+                self.schnet_activations, self.schnax_activations, interaction_block_idx=i
+            )
 
-        np.testing.assert_allclose(schnet_in2f, schnax_in2f, rtol=1e-6, atol=1e-6)
+            np.testing.assert_allclose(schnet_in2f, schnax_in2f, rtol=1e-6, atol=3 * 1e-6)
 
     def test_reshaping_and_elementwise_product_equality(self):
         """Assert equality of reshaping logic and element-wise product (after in2f, before aggregation).
@@ -125,44 +117,47 @@ class CFConvTest(TestCase):
 
             return do_reshape(schnet_in2f, neighbors)
 
-        schnet_in2f, schnax_in2f = activation.get_in2f(
-            self.schnet_activations, self.schnax_activations, interaction_block_idx=0
-        )
-        np.testing.assert_allclose(
-            schnet_in2f, schnax_in2f, rtol=self.rtol, atol=self.atol
-        )
+        for i in range(self.n_interactions):
+            schnet_in2f, schnax_in2f = activation.get_in2f(
+                self.schnet_activations, self.schnax_activations, interaction_block_idx=i
+            )
+            np.testing.assert_allclose(
+                schnet_in2f, schnax_in2f, rtol=1e-6, atol=3 * 1e-6
+            )
 
-        schnet_in2f = schnet_reshape(schnet_in2f, self.schnax_neighbors)
-        schnax_in2f = CFConv._reshape_y(schnax_in2f, self.schnax_neighbors)
-        np.testing.assert_allclose(
-            schnet_in2f[0], schnax_in2f[:, 0:48], rtol=self.rtol, atol=self.atol
-        )
+            schnet_in2f = schnet_reshape(schnet_in2f, self.schnax_neighbors)
+            schnax_in2f = CFConv._reshape_y(schnax_in2f, self.schnax_neighbors)
+            np.testing.assert_allclose(
+                schnet_in2f[0], schnax_in2f[:, 0:48], rtol=1e-6, atol=3 * 1e-6
+            )
 
-        schnet_W, schnax_W = activation.get_cfconv_filters(
-            self.schnet_activations, self.schnax_activations, interaction_block_idx=0
-        )
-        schnet_W = torch.tensor(schnet_W)[None, ...]  # add batches dimension
+            schnet_W, schnax_W = activation.get_cfconv_filters(
+                self.schnet_activations, self.schnax_activations, interaction_block_idx=i
+            )
+            schnet_W = torch.tensor(schnet_W)[None, ...]  # add batches dimension
 
-        schnet_y = schnet_in2f * schnet_W
-        schnax_y = schnax_in2f * schnax_W
+            schnet_y = schnet_in2f * schnet_W
+            schnax_y = schnax_in2f * schnax_W
 
-        # TODO: Test seems volatile. See above for improvements.
-        np.testing.assert_allclose(
-            schnet_y[0], schnax_y[:, 0:48], rtol=1e-5, atol=8 * 1e-6
-        )
+            # TODO: Test seems volatile. See above for improvements.
+            np.testing.assert_allclose(
+                schnet_y[0], schnax_y[:, 0:48], rtol=1e-5, atol=8 * 1e-6
+            )
 
     def test_aggregate(self):
-        schnet_agg, schnax_agg = activation.get_aggregate(
-            self.schnet_activations, self.schnax_activations, interaction_block_idx=0
-        )
-        np.testing.assert_allclose(
-            schnet_agg, schnax_agg, rtol=5 * self.rtol, atol=5 * self.atol
+        for i in range(self.n_interactions):
+            schnet_agg, schnax_agg = activation.get_aggregate(
+                self.schnet_activations, self.schnax_activations, interaction_block_idx=i
+            )
+            np.testing.assert_allclose(
+                schnet_agg, schnax_agg, rtol=5 * 1e-6, atol=5 * 1e-6
         )
 
     def test_f2out(self):
-        schnet_f2out, schnax_f2out = activation.get_f2out(
-            self.schnet_activations, self.schnax_activations, interaction_block_idx=0
-        )
-        np.testing.assert_allclose(
-            schnet_f2out, schnax_f2out, rtol=self.rtol, atol=2 * self.atol
-        )
+        for i in range(self.n_interactions):
+            schnet_f2out, schnax_f2out = activation.get_f2out(
+                self.schnet_activations, self.schnax_activations, interaction_block_idx=i
+            )
+            np.testing.assert_allclose(
+                schnet_f2out, schnax_f2out, rtol=1e-6, atol=2 * 1e-6
+            )
