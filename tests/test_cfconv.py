@@ -60,7 +60,7 @@ class CFConvTest(TestCase):
             self.schnet_activations, self.schnax_activations, interaction_block_idx=0
         )
         self.assertEqual((96, 48), schnet_cutoff.shape)
-        self.assertEqual((96, 61), schnax_cutoff.shape)
+        self.assertEqual((96, 60), schnax_cutoff.shape)
 
         relevant_schnax_cutoff = schnax_cutoff[:, 0:48]
         np.testing.assert_allclose(
@@ -113,7 +113,7 @@ class CFConvTest(TestCase):
             # convert to torch tensors and add a batch dimension for compatibility
             schnet_in2f = torch.tensor(schnet_in2f)[None, ...]
 
-            self.assertEqual((96, 61), neighbors.idx.shape)
+            self.assertEqual((96, 60), neighbors.idx.shape)
             neighbor_indices = neighbors.idx[:, 0:48]
 
             neighbors = torch.tensor(neighbor_indices, dtype=torch.int64)[None, ...]

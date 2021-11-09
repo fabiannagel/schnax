@@ -5,10 +5,10 @@ description = "schnet in jax"
 authors = ["Fabian Nagel <fabian.2.nagel@uni-konstanz.de>", "Marcel Langer <dev@marcel.science>"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
-jax_md =  { git = "https://github.com/google/jax-md.git", branch = "main" }
-schnetkit = { git = "https://github.com/sirmarcel/schnetkit.git", branch = "main" }
-ase = { git = "https://gitlab.com/ase/ase.git", branch = "master" }
+python = "^3.9"
+jax_md =  { git = "https://github.com/google/jax-md.git", branch = "main", rev = "25c816528c58486cea8f663ec6546fdc7538761c" }
+schnetkit = { git = "https://github.com/sirmarcel/schnetkit.git", branch = "main", rev = "d7cba6a2d5dafdeb72de3c3f37e5b211a30e3e5a" }
+ase = { git = "https://gitlab.com/ase/ase.git", branch = "master", rev = "a82a1a6101f25484bdb6369cb57659baeef78c38" }
 
 [tool.poetry.dev-dependencies]
 nose = "^1.3.7"

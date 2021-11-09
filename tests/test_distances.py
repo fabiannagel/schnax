@@ -45,7 +45,7 @@ class DistancesTest(TestCase):
 
     def test_nl_shapes(self):
         self.assertEqual((96, 48), self.schnet_nl.shape)
-        self.assertEqual((96, 61), self.schnax_nl.shape)
+        self.assertEqual((96, 60), self.schnax_nl.shape)
 
     def test_neighborhood_equality(self):
         """Asserts that every atom indices the same neighboring atoms in both neighbor list implementations."""

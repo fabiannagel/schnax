@@ -25,7 +25,7 @@ class DistanceExpansionTest(unittest.TestCase):
 
     def test_distance_expansions(self):
         self.assertEqual((96, 48, 25), self.schnet_expansions.shape)
-        self.assertEqual((96, 61, 25), self.schnax_expansions.shape)
+        self.assertEqual((96, 60, 25), self.schnax_expansions.shape)
 
         # SchNetPack's neighborhood size is 48, so we only compare up to that index.
         # anything past idx 48 is just padding anyways.
