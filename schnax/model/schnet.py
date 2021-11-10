@@ -9,25 +9,34 @@ from .interaction.interaction import Interaction
 
 
 class SchNet(hk.Module):
-    n_atom_basis = 128
-    max_z = 100
-    n_gaussians = 25
-
-    n_filters = 128
-
-    mean = 0.0
-    stddev = 20.0
+    # n_atom_basis = 128
+    # max_z = 100
+    # n_gaussians = 25
+    #
+    # n_filters = 128
+    #
+    # mean = 0.0
+    # stddev = 20.0
 
     # config_atomwise = {'n_in': 128, 'mean': 0.0, 'stddev': 20.0, 'n_layers': 2, 'n_neurons': None}
 
-    def __init__(self, r_cutoff: float, n_interactions: int, per_atom: bool):
+    def __init__(self, n_atom_basis: int, max_z: int, n_gaussians: int, n_filters: int, mean: float, stddev: float,
+                 r_cutoff: float, n_interactions: int, normalize_filter: bool, per_atom: bool):
+
+        self.n_atom_basis = n_atom_basis
+        self.max_z = max_z
+        self.n_gaussians = n_gaussians
+        self.n_filters = n_filters
+        self.mean = mean
+        self.stddev = stddev
+
         super().__init__(name="SchNet")
         self.n_interactions = n_interactions
         self.per_atom = per_atom
 
         self.embedding = hk.Embed(
             self.max_z, self.n_atom_basis, name="embeddings"
-        )  # TODO: Torch padding_idx missing in Haiku.
+        )
         self.distance_expansion = GaussianSmearing(0.0, r_cutoff, self.n_gaussians)
 
         self.interactions = hk.Sequential(
@@ -38,7 +47,7 @@ class SchNet(hk.Module):
                     n_filters=self.n_filters,
                     n_spatial_basis=self.n_gaussians,
                     r_cutoff=r_cutoff,
-                    normalize_filter=False
+                    normalize_filter=normalize_filter
                 )
                 for i in range(self.n_interactions)
             ]

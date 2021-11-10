@@ -1,21 +1,22 @@
-from typing import Dict
+from typing import Dict, Any
 
+import numpy as np
+from jax import random
+from jax_md import space, partition
+from schnax import energy, utils
 from schnetkit.engine import load_file
+import jax.numpy as jnp
 import regex as re
 
 
 def get_interaction_count(file: str) -> int:
-    _, state = load_file(file)
-    layer_names = list(state.keys())
-    regex = re.compile('representation\.interactions\.(?P<index>[0-9]+).*')
-    matches = [regex.match(l) for l in layer_names]
-    indices = [int(m.group('index')) for m in matches if m is not None]
-    return max(indices) + 1
+    spec, state = load_file(file)
+    return spec['schnet']['representation']['n_interactions']
 
 
 def get_params(file: str) -> Dict:
     """Read weights from an existing schnetkit torch model."""
-    _, state = load_file(file)
+    spec, state = load_file(file)
     n_interactions = get_interaction_count(file)
     params = {}
 
@@ -90,3 +91,62 @@ def get_params(file: str) -> Dict:
     )
 
     return params
+
+
+def normalize_representation_config(repr_config: Dict) -> Dict:
+    """Normalize existing representation config to contain all required arguments. Also changed some naming conventions
+    to passthrough kwargs to schnax with less hassle."""
+
+    normalized_repr = {}
+
+    def set_value_or_default(key: str, default: Any, new_key=None):
+        if new_key is None:
+            new_key = key
+
+        try:
+            normalized_repr.update({ new_key: repr_config[key] })
+        except KeyError:
+            normalized_repr.update({ new_key: default })
+
+    # skipping 'trainable_gaussians' (training not implemented)
+    set_value_or_default('cutoff', 5.0, new_key='r_cutoff')
+    set_value_or_default('n_interactions', 1)
+    set_value_or_default('n_atom_basis', 128)
+    set_value_or_default('max_z', 100)
+    set_value_or_default('n_gaussians', 25)
+    set_value_or_default('n_filters', 128)
+    set_value_or_default('mean', 0.0)
+    set_value_or_default('stddev', 20.0)
+    set_value_or_default('normalize_filter', False)
+    return normalized_repr
+
+
+def initialize_from_schnetkit_model(file: str, box: np.ndarray, dr_threshold=0.0, per_atom=False):
+    spec, weights = load_file(file)
+    repr_config = normalize_representation_config(spec['schnet']['representation'])
+    atomwise_config = spec['schnet']['atomwise']
+
+    box = jnp.float32(box)
+    displacement_fn, shift_fn = space.periodic_general(
+        box, fractional_coordinates=False
+    )
+
+    r_cutoff = jnp.float32(repr_config['r_cutoff'])
+    neighbor_fn = partition.neighbor_list(
+        displacement_fn,
+        box,
+        r_cutoff,
+        dr_threshold=dr_threshold,  # as the effective cutoff = r_cutoff + dr_threshold
+        mask_self=True,  # an atom is not a neighbor of itself
+        fractional_coordinates=False,
+    )
+
+
+    # 'max_z', 'n_gaussians', 'mean', and 'stddev' missing in repr
+    init_fn, apply_fn = energy._get_model(displacement_fn=displacement_fn,
+                                          per_atom=per_atom,
+                                          **repr_config)
+
+    params = utils.get_params(file)
+
+    return params, neighbor_fn, init_fn, apply_fn
