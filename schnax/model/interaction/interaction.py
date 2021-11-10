@@ -15,10 +15,11 @@ class Interaction(hk.Module):
         n_filters: int,
         n_spatial_basis: int,
         r_cutoff: float,
+        normalize_filter: bool
     ):
         super().__init__(name="Interaction_{}".format(idx))
         self.cfconv = CFConv(
-            n_filters, n_atom_basis, r_cutoff, activation=shifted_softplus
+            n_filters, n_atom_basis, r_cutoff, activation=shifted_softplus, normalize_filter=normalize_filter
         )
         self.dense = hk.Linear(n_atom_basis, name="Output")
 

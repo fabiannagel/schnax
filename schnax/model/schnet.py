@@ -38,6 +38,7 @@ class SchNet(hk.Module):
                     n_filters=self.n_filters,
                     n_spatial_basis=self.n_gaussians,
                     r_cutoff=r_cutoff,
+                    normalize_filter=False
                 )
                 for i in range(self.n_interactions)
             ]
