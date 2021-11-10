@@ -30,7 +30,7 @@ class CFConvTest(InteractionTestCase):
             self.geometry_file, self.r_cutoff, sort_nl_indices=True
         )
         schnax_activations, _ = init.predict_schnax(
-            R, Z, displacement_fn, neighbors, self.r_cutoff, self.weights_file
+            R, Z, box, displacement_fn, neighbors, self.r_cutoff, self.weights_file
         )
         return schnax_activations, neighbors
 
