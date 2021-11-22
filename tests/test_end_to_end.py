@@ -8,7 +8,7 @@ import tests.test_utils.initialize as init
 
 
 class EndToEndTest(TestCase):
-    geometry_file = "assets/geometry.in"
+    geometry_file = "assets/zro2_n_96.in"
     weights_file = "assets/model_n1.torch"
 
     r_cutoff = 5.0
