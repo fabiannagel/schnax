@@ -9,11 +9,11 @@ from .utils import compute_distances
 
 def _get_model(displacement_fn: DisplacementFn, n_atom_basis: int, max_z: int, n_gaussians: int, n_filters: int,
                mean: float, stddev: float, r_cutoff: jnp.ndarray, n_interactions: int, normalize_filter: bool,
-               per_atom: bool):
+               per_atom: bool, return_activations: bool):
     """Moved to dedicated method for better testing access."""
 
-    @hk.without_apply_rng
-    @hk.transform_with_state
+    # @hk.without_apply_rng
+    # @hk.transform_with_state
     def model(R: jnp.ndarray, Z: jnp.int32, neighbors: jnp.ndarray):
         dR = compute_distances(R, neighbors, displacement_fn)
         net = SchNet(n_atom_basis=n_atom_basis,
@@ -28,7 +28,10 @@ def _get_model(displacement_fn: DisplacementFn, n_atom_basis: int, max_z: int, n
                      per_atom=per_atom)
         return net(dR, Z, neighbors)
 
-    return model
+    if return_activations:
+        model = hk.transform_with_state(model)
+
+    return hk.without_apply_rng(model)
 
 
 def schnet_neighbor_list(
@@ -57,7 +60,8 @@ def schnet_neighbor_list(
                        r_cutoff=r_cutoff,
                        n_interactions=n_interactions,
                        normalize_filter=normalize_filter,
-                       per_atom=per_atom)
+                       per_atom=per_atom,
+                       return_activations=True)
 
     neighbor_fn = jax_md.partition.neighbor_list(
         displacement_fn,
