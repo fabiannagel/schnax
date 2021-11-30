@@ -32,10 +32,13 @@ class EndToEndTest(TestCase):
         atoms = read(self.geometry_file)
         R, Z, box = utils.atoms_to_input(atoms)
 
-        params, neighbor_fn, init_fn, apply_fn = initialize_from_schnetkit_model(self.weights_file,
-                                                                                 box=box,
-                                                                                 dr_threshold=0.0,
-                                                                                 per_atom=False)
+        neighbor_fn, displacement_fn, shift_fn, params, init_fn, apply_fn = initialize_from_schnetkit_model(
+            self.weights_file,
+            box=box,
+            dr_threshold=0.0,
+            per_atom=False
+        )
+
         neighbors = neighbor_fn(R)
 
         rng = jax.random.PRNGKey(0)

@@ -151,5 +151,4 @@ def initialize_from_schnetkit_model(
     )
 
     params = utils.get_params(file)
-
-    return params, neighbor_fn, init_fn, apply_fn
+    return neighbor_fn, displacement_fn, shift_fn, params, init_fn, apply_fn
