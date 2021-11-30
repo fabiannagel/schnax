@@ -77,7 +77,8 @@ def predict_schnax(
 
     neighbor_fn, init_fn, apply_fn = schnet_neighbor_list(displacement_fn, box, r_cutoff, dr_threshold=0.0,
                                                           n_interactions=get_interaction_count(weights_file),
-                                                          per_atom=per_atom)
+                                                          per_atom=per_atom,
+                                                          return_activations=True)
 
     rng = jax.random.PRNGKey(0)
     _, state = init_fn(rng, R, Z, neighbors)

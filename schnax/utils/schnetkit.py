@@ -122,7 +122,7 @@ def normalize_representation_config(repr_config: Dict) -> Dict:
 
 
 def initialize_from_schnetkit_model(
-    file: str, box: np.ndarray, dr_threshold=0.0, per_atom=False
+    file: str, box: np.ndarray, dr_threshold=0.0, per_atom=False, return_activations=True
 ):
     spec, weights = load_file(file)
     model_config = normalize_representation_config(spec['schnet']['representation'])
@@ -147,7 +147,7 @@ def initialize_from_schnetkit_model(
 
     # 'max_z', 'n_gaussians', 'mean', and 'stddev' missing in repr
     init_fn, apply_fn = energy._get_model(
-        displacement_fn=displacement_fn, per_atom=per_atom, return_activations=True, **model_config
+        displacement_fn=displacement_fn, per_atom=per_atom, return_activations=return_activations, **model_config
     )
 
     params = utils.get_params(file)

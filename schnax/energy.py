@@ -47,7 +47,8 @@ def schnet_neighbor_list(
         n_filters=128,
         mean=0.0,
         stddev=20.0,
-        normalize_filter=False
+        normalize_filter=False,
+        return_activations=False
 ):
     """Convenience wrapper around SchNet"""
     model = _get_model(displacement_fn=displacement_fn,
@@ -61,7 +62,7 @@ def schnet_neighbor_list(
                        n_interactions=n_interactions,
                        normalize_filter=normalize_filter,
                        per_atom=per_atom,
-                       return_activations=True)
+                       return_activations=return_activations)
 
     neighbor_fn = jax_md.partition.neighbor_list(
         displacement_fn,
