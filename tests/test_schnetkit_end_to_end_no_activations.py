@@ -42,9 +42,6 @@ class EndToEndTest(TestCase):
         )
 
         neighbors = neighbor_fn(R)
-        # rng = jax.random.PRNGKey(0)
-
-        # init_fn, apply_fn = transform_stateless(rng, init_fn, apply_fn)
         energy = apply_fn(params, R, Z, neighbors)
 
         np.testing.assert_allclose(
