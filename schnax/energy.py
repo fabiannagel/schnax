@@ -1,10 +1,12 @@
 import haiku as hk
+import jax
 import jax_md
 from jax import numpy as jnp
 from jax_md.energy import DisplacementFn, Box
 
 from .model import SchNet
 from .utils import compute_distances
+from .utils.stateless import transform_stateless
 
 
 def _get_model(displacement_fn: DisplacementFn, n_atom_basis: int, max_z: int, n_gaussians: int, n_filters: int,
@@ -12,8 +14,6 @@ def _get_model(displacement_fn: DisplacementFn, n_atom_basis: int, max_z: int, n
                per_atom: bool, return_activations: bool):
     """Moved to dedicated method for better testing access."""
 
-    # @hk.without_apply_rng
-    # @hk.transform_with_state
     def model(R: jnp.ndarray, Z: jnp.int32, neighbors: jnp.ndarray):
         dR = compute_distances(R, neighbors, displacement_fn)
         net = SchNet(n_atom_basis=n_atom_basis,
@@ -28,11 +28,14 @@ def _get_model(displacement_fn: DisplacementFn, n_atom_basis: int, max_z: int, n
                      per_atom=per_atom)
         return net(dR, Z, neighbors)
 
+    fun = hk.transform_with_state(model)
+    fun = hk.without_apply_rng(fun)
     if return_activations:
-        model = hk.transform_with_state(model)
+        return fun
 
-    return hk.without_apply_rng(model)
-
+    # how to get rid of states? see https://github.com/deepmind/dm-haiku/issues/267
+    rng = jax.random.PRNGKey(0)
+    return transform_stateless(rng, fun.init, fun.apply)
 
 def schnet_neighbor_list(
         displacement_fn: DisplacementFn,
