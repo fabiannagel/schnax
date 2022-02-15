@@ -1,0 +1,5 @@
+jax_md==0.1.24
+schnetkit @ git+https://github.com/sirmarcel/schnetkit.git@d7cba6a2d5dafdeb72de3c3f37e5b211a30e3e5a
+ase @ git+https://gitlab.com/ase/ase.git@a82a1a6101f25484bdb6369cb57659baeef78c38
+nose==1.3.7
+regex==2021.11.2
