@@ -1,3 +1,5 @@
+![build](https://github.com/fabiannagel/schnax/actions/workflows/travis.yml/badge.svg)
+
 # `schnax`: SchNet in JAX and JAX-MD
 This is a re-implementation of the `SchNet` neural network architecture in [JAX](https://github.com/google/jax), [haiku](https://github.com/deepmind/dm-haiku), and [JAX-MD](https://github.com/google/jax-md).
 `schnax` is intended as a drop-in replacement for the original `pytorch` implementation, allowing the use of trained weights obtained with [SchNetPack](https://github.com/atomistic-machine-learning/schnetpack).
