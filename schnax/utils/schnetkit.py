@@ -6,7 +6,6 @@ from jax_md import space, partition
 from schnax import energy, utils
 from schnetkit.engine import load_file
 import jax.numpy as jnp
-import regex as re
 
 
 def get_interaction_count(file: str) -> int:

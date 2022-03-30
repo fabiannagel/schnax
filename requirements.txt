@@ -2,7 +2,6 @@ ase==3.22.1
 dm-haiku==0.0.6
 jax-md==0.1.25
 nose2==0.11.0
-regex==2021.11.10
 schnax @ git+https://github.com/fabiannagel/schnax.git@b901791112066e49fc4c322427bfd09805882a1c
 schnetkit @ git+https://github.com/sirmarcel/schnetkit.git@d7cba6a2d5dafdeb72de3c3f37e5b211a30e3e5a
 schnetpack==1.0.0
