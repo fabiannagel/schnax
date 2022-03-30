@@ -9,6 +9,7 @@ python = "^3.7"
 jax = {extras = ["cpu"], version = "^0.3.4"}
 jax_md = "^0.1.25"
 dm-haiku = "^0.0.6"
+numpy = "^1.22.3"
 
 [tool.poetry.dev-dependencies]
 ase = "^3.22"
