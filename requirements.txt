@@ -1,8 +1,6 @@
 ase==3.22.1
 dm-haiku==0.0.6
-jax==0.3.4
 jax-md==0.1.25
-jaxlib==0.3.2
 nose2==0.11.0
 regex==2021.11.10
 schnax @ git+https://github.com/fabiannagel/schnax.git@b901791112066e49fc4c322427bfd09805882a1c
