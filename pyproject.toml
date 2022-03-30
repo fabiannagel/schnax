@@ -5,7 +5,7 @@ description = "The SchNet neural network architecture in JAX and JAX-MD"
 authors = ["Fabian Nagel <fabian.2.nagel@uni-konstanz.de>", "Marcel Langer <dev@marcel.science>"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 jax = {extras = ["cpu"], version = "^0.3.4"}
 jax_md = "^0.1.25"
 dm-haiku = "^0.0.6"
