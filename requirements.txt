@@ -1,5 +1,39 @@
-jax_md==0.1.24
+absl-py==1.0.0
+ase @ git+https://gitlab.com/ase/ase.git@71a2abf3621309c73ebed8c96098fcf43c1d6a0c
+cached-property @ file:///home/conda/feedstock_root/build_artifacts/cached_property_1615209429212/work
+coverage==6.3.2
+cycler==0.11.0
+dataclasses==0.6
+dm-haiku==0.0.6
+flatbuffers==2.0
+fonttools==4.31.2
+h5py @ file:///Users/runner/miniforge3/conda-bld/h5py_1637964553571/work
+jax==0.3.4
+jax-md==0.1.25
+jaxlib==0.3.2
+jmp==0.0.2
+jraph==0.0.2.dev0
+kiwisolver==1.4.2
+matplotlib==3.5.1
+nose2==0.11.0
+numpy @ file:///Users/runner/miniforge3/conda-bld/numpy_1646717246550/work
+opt-einsum==3.3.0
+packaging==21.3
+Pillow==9.0.1
+protobuf==3.19.4
+pyparsing==3.0.7
+python-dateutil==2.8.2
+python-version==0.0.2
+PyYAML==5.4.1
+regex==2021.11.10
+schnax @ git+https://github.com/fabiannagel/schnax.git@b901791112066e49fc4c322427bfd09805882a1c
 schnetkit @ git+https://github.com/sirmarcel/schnetkit.git@d7cba6a2d5dafdeb72de3c3f37e5b211a30e3e5a
-ase @ git+https://gitlab.com/ase/ase.git@a82a1a6101f25484bdb6369cb57659baeef78c38
-nose==1.3.7
-regex==2021.11.2
+schnetpack==1.0.0
+scipy==1.8.0
+six==1.16.0
+specable @ git+https://github.com/sirmarcel/specable.git@a28656eac5d13ceebd6845aa0a4dd5e3ca4b0a45
+tabulate==0.8.9
+tensorboardX==2.5
+torch==1.11.0
+tqdm==4.63.1
+typing_extensions==4.1.1

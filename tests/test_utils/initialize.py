@@ -21,7 +21,7 @@ from .mock_environment_provider import MockEnvironmentProvider
 
 
 def initialize_schnax(
-    geometry_file="assets/zro2_n_96.in", r_cutoff=5.0, sort_nl_indices=False
+    geometry_file="tests/assets/zro2_n_96.in", r_cutoff=5.0, sort_nl_indices=False
 ):
     atoms = read(geometry_file)
     R, Z, box = utils.atoms_to_input(atoms)
@@ -38,7 +38,7 @@ def initialize_schnax(
         fractional_coordinates=False,
     )
 
-    neighbors = neighbor_fn(R)
+    neighbors = neighbor_fn.allocate(R)
     if sort_nl_indices:
         neighbors = sort_schnax_nl(neighbors)
 
@@ -60,7 +60,7 @@ def predict_schnax(
     displacement_fn: DisplacementFn,
     neighbors: NeighborList,
     r_cutoff: float,
-    weights_file="assets/model_n1.torch",
+    weights_file="tests/assets/model_n1.torch",
     per_atom=False
 ):
     # n_interactions = get_interaction_count(weights_file)
@@ -90,8 +90,8 @@ def predict_schnax(
 
 
 def initialize_and_predict_schnax(
-    geometry_file="assets/zro2_n_96.in",
-    weights_file="assets/model_n1.torch",
+    geometry_file="tests/assets/zro2_n_96.in",
+    weights_file="tests/assets/model_n1.torch",
     r_cutoff=5.0,
     sort_nl_indices=False,
     per_atom=False
@@ -105,7 +105,7 @@ def initialize_and_predict_schnax(
 
 
 def get_schnet_inputs(
-    geometry_file="assets/zro2_n_96.in", r_cutoff=5.0, mock_environment_provider=None
+    geometry_file="tests/assets/zro2_n_96.in", r_cutoff=5.0, mock_environment_provider=None
 ):
     atoms = read(geometry_file, format="aims")
     if not mock_environment_provider:
@@ -121,8 +121,8 @@ def get_schnet_inputs(
 
 
 def initialize_and_predict_schnet(
-    geometry_file="assets/zro2_n_96.in",
-    weights_file="assets/model_n1.torch",
+    geometry_file="tests/assets/zro2_n_96.in",
+    weights_file="tests/assets/model_n1.torch",
     r_cutoff=5.0,
     sort_nl_indices=False,
 ):

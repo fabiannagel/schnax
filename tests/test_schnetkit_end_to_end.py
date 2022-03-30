@@ -12,8 +12,8 @@ from schnax.utils.schnetkit import initialize_from_schnetkit_model
 
 
 class EndToEndTest(TestCase):
-    geometry_file = "assets/zro2_n_96.in"
-    weights_file = "assets/model_n1.torch"
+    geometry_file = "tests/assets/zro2_n_96.in"
+    weights_file = "tests/assets/model_n1.torch"
 
     r_cutoff = 5.0
 
@@ -39,7 +39,7 @@ class EndToEndTest(TestCase):
             per_atom=False
         )
 
-        neighbors = neighbor_fn(R)
+        neighbors = neighbor_fn.allocate(R)
 
         rng = jax.random.PRNGKey(0)
         _, state = init_fn(rng, R, Z, neighbors)

@@ -13,8 +13,8 @@ from schnax.utils.stateless import transform_stateless
 
 
 class EndToEndTest(TestCase):
-    geometry_file = "assets/zro2_n_96.in"
-    weights_file = "assets/model_n1.torch"
+    geometry_file = "tests/assets/zro2_n_96.in"
+    weights_file = "tests/assets/model_n1.torch"
 
     r_cutoff = 5.0
 
@@ -41,7 +41,7 @@ class EndToEndTest(TestCase):
             return_activations=False
         )
 
-        neighbors = neighbor_fn(R)
+        neighbors = neighbor_fn.allocate(R)
         energy = apply_fn(params, R, Z, neighbors)
 
         np.testing.assert_allclose(

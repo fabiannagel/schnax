@@ -16,7 +16,8 @@ class CFConvTest(InteractionTestCase):
     r_cutoff = 5.0
 
     def __init__(self, method_name: str):
-        super().__init__(method_name, geometry_file="assets/zro2_n_96.in", weights_file="assets/model_n5.torch")
+        super().__init__(method_name, geometry_file="tests/assets/zro2_n_96.in",
+                         weights_file="tests/assets/model_n5.torch")
 
     def setUp(self):
         _, self.schnet_activations, __ = init.initialize_and_predict_schnet(
