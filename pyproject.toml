@@ -1,19 +1,23 @@
 [tool.poetry]
 name = "schnax"
 version = "0.1.0"
-description = "schnet in jax"
+description = "The SchNet neural network architecture in JAX and JAX-MD"
 authors = ["Fabian Nagel <fabian.2.nagel@uni-konstanz.de>", "Marcel Langer <dev@marcel.science>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-jax_md = "^0.1.24"
-schnetkit = { git = "https://github.com/sirmarcel/schnetkit.git", branch = "main", rev = "d7cba6a2d5dafdeb72de3c3f37e5b211a30e3e5a" }
-ase = { git = "https://gitlab.com/ase/ase.git", branch = "master", rev = "a82a1a6101f25484bdb6369cb57659baeef78c38" }
+jax_md = "^0.1.25"
+dm-haiku = "^0.0.6"
 regex = "^2021.11.2"
 
+
 [tool.poetry.dev-dependencies]
-nose = "^1.3.7"
-regex = "2021.11.2"
+ase = "^3.22"
+schnetpack = { git = "https://github.com/atomistic-machine-learning/schnetpack.git", branch = "master" }
+schnetkit = { git = "https://github.com/sirmarcel/schnetkit.git", branch = "main", rev = "d7cba6a2d5dafdeb72de3c3f37e5b211a30e3e5a" }
+nose2 = "^0.11.0"
+regex = "2021.11.10"
+torch = "^1.11.0"
 
 [build-system]
 requires = ["poetry>=0.12"]
