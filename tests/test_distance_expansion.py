@@ -1,12 +1,12 @@
-import unittest
+from unittest import TestCase
 
 import numpy as np
 
-import test_utils.initialize as init
-import test_utils.activation as activation
+import tests.test_utils.initialize as init
+import tests.test_utils.activation as activation
 
 
-class DistanceExpansionTest(unittest.TestCase):
+class DistanceExpansionTest(TestCase):
     r_cutoff = 5.0
     atol = 1e-6
     rtol = 2 * 1e-5  # close to the edge - 1 * 1e-5 already fails.
@@ -15,8 +15,9 @@ class DistanceExpansionTest(unittest.TestCase):
         _, schnet_activations, __ = init.initialize_and_predict_schnet(
             sort_nl_indices=True
         )
-        schnax_activations, _ = init.initialize_and_predict_schnax(
-            r_cutoff=self.r_cutoff, sort_nl_indices=True
+
+        energy, energies, forces, schnax_activations = init.initialize_and_predict_schnax(
+            r_cutoff=self.r_cutoff, sort_nl_indices=True, return_activations=True
         )
         (
             self.schnet_expansions,

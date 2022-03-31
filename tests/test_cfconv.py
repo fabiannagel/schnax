@@ -7,8 +7,8 @@ import jax.numpy as jnp
 
 from schnax.model.interaction.cfconv import CFConv
 
-import test_utils.initialize as init
-import test_utils.activation as activation
+import tests.test_utils.initialize as init
+import tests.test_utils.activation as activation
 from tests.interaction_test_case import InteractionTestCase
 
 
@@ -17,7 +17,7 @@ class CFConvTest(InteractionTestCase):
 
     def __init__(self, method_name: str):
         super().__init__(method_name, geometry_file="tests/assets/zro2_n_96.in",
-                         weights_file="tests/assets/model_n5.torch")
+                         weights_file="tests/assets/model_n1.torch")
 
     def setUp(self):
         _, self.schnet_activations, __ = init.initialize_and_predict_schnet(
@@ -30,9 +30,11 @@ class CFConvTest(InteractionTestCase):
         R, Z, box, neighbors, displacement_fn = init.initialize_schnax(
             self.geometry_file, self.r_cutoff, sort_nl_indices=True
         )
-        schnax_activations, _ = init.predict_schnax(
-            R, Z, box, displacement_fn, neighbors, self.r_cutoff, self.weights_file
+
+        energy, energies, forces, schnax_activations = init.predict_schnax(
+            R, Z, box, displacement_fn, neighbors, self.r_cutoff, self.weights_file, return_actiations=True
         )
+
         return schnax_activations, neighbors
 
     def test_filter_network(self):

@@ -17,7 +17,7 @@ class InteractionTest(InteractionTestCase):
     atol = 1e-6
 
     def __init__(self, method_name: str):
-        super().__init__(method_name, geometry_file="tests/assets/zro2_n_96.in", weights_file="tests/assets/model_n5.torch")
+        super().__init__(method_name, geometry_file="tests/assets/zro2_n_96.in", weights_file="tests/assets/model_n1.torch")
 
     def setUp(self):
         _, self.schnet_activations, _ = init.initialize_and_predict_schnet(
@@ -26,8 +26,8 @@ class InteractionTest(InteractionTestCase):
             r_cutoff=self.r_cutoff,
             sort_nl_indices=True,
         )
-        self.schnax_activations, _ = init.initialize_and_predict_schnax(
-            self.geometry_file, self.weights_file, self.r_cutoff, sort_nl_indices=True
+        energy, energies, forces, self.schnax_activations = init.initialize_and_predict_schnax(
+            self.geometry_file, self.weights_file, self.r_cutoff, sort_nl_indices=True, return_activations=True
         )
 
     def test_interaction_block(self):

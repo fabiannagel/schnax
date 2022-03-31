@@ -3,6 +3,7 @@ import jax_md
 import numpy as np
 from ase.io import read
 from jax import numpy as jnp
+from jax_md import quantity
 from jax_md.partition import NeighborList
 from jax_md.space import DisplacementFn, Box
 from schnetpack import AtomsConverter
@@ -54,39 +55,39 @@ def sort_schnax_nl(neighbors: NeighborList) -> NeighborList:
 
 
 def predict_schnax(
-    R: jnp.ndarray,
-    Z: jnp.ndarray,
-    box: Box,
-    displacement_fn: DisplacementFn,
-    neighbors: NeighborList,
-    r_cutoff: float,
-    weights_file="tests/assets/model_n1.torch",
-    per_atom=False
+        R: jnp.ndarray, Z: jnp.ndarray, box: Box, displacement_fn: DisplacementFn, neighbors: NeighborList,
+        r_cutoff: float, weights_file="tests/assets/model_n1.torch", return_actiations=False
 ):
-    # n_interactions = get_interaction_count(weights_file)
-    # init_fn, apply_fn = energy._get_model(displacement_fn, r_cutoff, n_interactions, per_atom)
-    #
-    # # get initial state and params from torch file
-    # rng = jax.random.PRNGKey(0)
-    # _, state = init_fn(rng, R, Z, neighbors)
-    # params = utils.get_params(weights_file)
-    #
-    # # run forward pass and obtain intermediates
-    # pred, state = apply_fn(params, state, R, Z, neighbors)
-    # return state, pred
-
     neighbor_fn, init_fn, apply_fn = schnet_neighbor_list(displacement_fn, box, r_cutoff, dr_threshold=0.0,
                                                           n_interactions=get_interaction_count(weights_file),
-                                                          per_atom=per_atom,
-                                                          return_activations=True)
-
-    rng = jax.random.PRNGKey(0)
-    _, state = init_fn(rng, R, Z, neighbors)
+                                                          per_atom=True,
+                                                          return_activations=return_actiations)
     params = utils.get_params(weights_file)
+    rng = jax.random.PRNGKey(0)
 
-    # run forward pass and obtain intermediates
-    pred, state = apply_fn(params, state, R, Z, neighbors)
-    return state, pred
+    def pred_fn_stateless(energies_fn):
+        # energies_fn = lambda R: apply_fn(R)
+        energy_fn = lambda R: jnp.sum(energies_fn(R))
+        force_fn = quantity.force(energy_fn)
+        return energy_fn(R), energies_fn(R), force_fn(R)
+        # energy_fn = lambda R: jnp.sum(apply_fn)
+        # return energy_fn(R), apply_fn(R), force_fn(R)
+
+    def pred_fn_stateful(energies_fn):
+        energy_fn = lambda R: jnp.sum(energies_fn(R)[0])
+        force_fn = quantity.force(energy_fn)
+        energies, state = energies_fn(R)
+        return energy_fn(R), energies, force_fn(R), state
+
+    if return_actiations:
+        _, state = init_fn(rng, R, Z, neighbors)
+        apply_fn_stateful = lambda R: apply_fn(params, state, R, Z, neighbors)
+        energy, energies, forces, state = pred_fn_stateful(apply_fn_stateful)
+        return energy, energies, forces, state
+
+    apply_fn_stateless = lambda R: apply_fn(params, R, Z, neighbors)
+    energy, energies, forces = pred_fn_stateless(apply_fn_stateless)
+    return energy, energies, forces
 
 
 def initialize_and_predict_schnax(
@@ -94,14 +95,12 @@ def initialize_and_predict_schnax(
     weights_file="tests/assets/model_n1.torch",
     r_cutoff=5.0,
     sort_nl_indices=False,
-    per_atom=False
+    return_activations=False
 ):
     R, Z, box, neighbors, displacement_fn = initialize_schnax(
         geometry_file, r_cutoff, sort_nl_indices
     )
-    return predict_schnax(
-        R, Z, box, displacement_fn, neighbors, r_cutoff, weights_file, per_atom
-    )
+    return predict_schnax(R, Z, box, displacement_fn, neighbors, r_cutoff, weights_file, return_activations)
 
 
 def get_schnet_inputs(

@@ -1,15 +1,10 @@
 from unittest import TestCase
 
-import jax
-import jax.numpy as jnp
 import numpy as np
-from schnax import utils
-from schnetkit import Calculator
 from ase.io import read
+from schnetkit import Calculator
 
 import tests.test_utils.initialize as init
-from schnax.utils.schnetkit import initialize_from_schnetkit_model
-from schnax.utils.stateless import transform_stateless
 
 
 class EndToEndTest(TestCase):
@@ -22,28 +17,42 @@ class EndToEndTest(TestCase):
         super().__init__(method_name)
 
     def setUp(self):
-        schnet = Calculator(self.weights_file, skin=0.0, energies=True, stress=True)
+        self.schnet_preds = self._initalize_and_predict_schnet()
+        self.schnax_preds = self._initialize_and_predict_schnax()
+
+    def _initalize_and_predict_schnet(self):
+        schnet = Calculator(self.weights_file, skin=0.0, energies=True, stress=False)
         atoms = read(self.geometry_file)
         preds = schnet.calculate(atoms)
-        self.schnet_energy = preds["energy"]
-        self.schnet_energies = preds["energies"]
-        self.schnet_forces = preds["forces"]
 
-    def test_energy_equality(self):
-        atoms = read(self.geometry_file)
-        R, Z, box = utils.atoms_to_input(atoms)
+        return {
+            'energy': preds["energy"],
+            'energies': preds["energies"],
+            'forces': preds["forces"]
+        }
 
-        neighbor_fn, displacement_fn, shift_fn, params, init_fn, apply_fn = initialize_from_schnetkit_model(
-            self.weights_file,
-            box=box,
-            dr_threshold=0.0,
-            per_atom=False,
-            return_activations=False
+    def _initialize_and_predict_schnax(self):
+        energy, energies, forces = init.initialize_and_predict_schnax(
+            self.geometry_file, self.weights_file, self.r_cutoff, sort_nl_indices=False, return_activations=False
         )
 
-        neighbors = neighbor_fn.allocate(R)
-        energy = apply_fn(params, R, Z, neighbors)
+        return {
+            'energy': energy,
+            'energies': energies,
+            'forces': forces
+        }
 
+    def test_energy_equality(self):
         np.testing.assert_allclose(
-            self.schnet_energy, energy, rtol=6 * 1e-6, atol=1e-6
+            self.schnet_preds['energy'], self.schnax_preds['energy'], rtol=1e-6, atol=4 * 1e-5
+        )
+
+    def test_energies_equality(self):
+        np.testing.assert_allclose(
+            self.schnet_preds['energies'], self.schnax_preds['energies'], rtol=1e-6, atol=4 * 1e-6
+        )
+
+    def test_forces_equality(self):
+        np.testing.assert_allclose(
+            self.schnet_preds['forces'], self.schnax_preds['forces'], rtol=1e-6, atol=3 * 1e-5
         )

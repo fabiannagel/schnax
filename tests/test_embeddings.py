@@ -1,8 +1,8 @@
 from unittest import TestCase
 import numpy as np
 
-import test_utils.activation as activation
-import test_utils.initialize as init
+import tests.test_utils.activation as activation
+import tests.test_utils.initialize as init
 
 
 class EmbeddingsTest(TestCase):
@@ -16,7 +16,7 @@ class EmbeddingsTest(TestCase):
 
     def setUp(self):
         _, schnet_activations, __ = init.initialize_and_predict_schnet()
-        schnax_activations, _ = init.initialize_and_predict_schnax()
+        energy, energies, forces, schnax_activations = init.initialize_and_predict_schnax(return_activations=True)
         self.schnet_embeddings, self.schnax_embeddings = activation.get_embeddings(
             schnet_activations, schnax_activations
         )

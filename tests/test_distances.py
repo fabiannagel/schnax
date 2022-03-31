@@ -5,7 +5,7 @@ import numpy as np
 
 from schnax import utils
 
-import test_utils.initialize as init
+import tests.test_utils.initialize as init
 
 
 class DistancesTest(TestCase):
