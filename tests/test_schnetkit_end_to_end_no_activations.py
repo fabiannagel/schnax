@@ -49,7 +49,7 @@ class EndToEndTest(TestCase):
 
     def test_energies_equality(self):
         np.testing.assert_allclose(
-            self.schnet_preds['energies'], self.schnax_preds['energies'], rtol=1e-6, atol=4 * 1e-6
+            self.schnet_preds['energies'], self.schnax_preds['energies'], rtol=1e-6, atol=1e-5
         )
 
     def test_forces_equality(self):
