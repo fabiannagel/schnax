@@ -14,8 +14,8 @@ def _get_model(displacement_fn: DisplacementFn, n_atom_basis: int, max_z: int, n
                per_atom: bool, return_activations: bool):
     """Moved to dedicated method for better testing access."""
 
-    def model(R: jnp.ndarray, Z: jnp.int32, neighbors: jnp.ndarray):
-        dR = compute_distances(R, neighbors, displacement_fn)
+    def model(R: jnp.ndarray, Z: jnp.int32, neighbor: jnp.ndarray):
+        dR = compute_distances(R, neighbor, displacement_fn)
         net = SchNet(n_atom_basis=n_atom_basis,
                      max_z=max_z,
                      n_gaussians=n_gaussians,
@@ -26,7 +26,7 @@ def _get_model(displacement_fn: DisplacementFn, n_atom_basis: int, max_z: int, n
                      n_interactions=n_interactions,
                      normalize_filter=normalize_filter,
                      per_atom=per_atom)
-        return net(dR, Z, neighbors)
+        return net(dR, Z, neighbor)
 
     fun = hk.transform_with_state(model)
     fun = hk.without_apply_rng(fun)
