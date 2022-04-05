@@ -3,7 +3,7 @@ import optax
 from jax import vmap, grad, jit, random, lax
 from jax_md import space
 from schnax.energy import schnet_neighbor_list
-from train.train_utils import build_dataset, make_batches
+from schnax.utils.train import build_dataset, make_batches
 
 # mkdir -p train/data/iso17
 # !wget http://quantum-machine.org/datasets/iso17.tar.gz -P train/data/iso17
