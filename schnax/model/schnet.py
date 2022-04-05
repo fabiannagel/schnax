@@ -88,4 +88,4 @@ class SchNet(hk.Module):
             return jnp.squeeze(yi)
 
         y = self.aggregate(yi)
-        return y
+        return jnp.squeeze(y)

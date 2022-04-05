@@ -37,6 +37,7 @@ def _get_model(displacement_fn: DisplacementFn, n_atom_basis: int, max_z: int, n
     rng = jax.random.PRNGKey(0)
     return transform_stateless(rng, fun.init, fun.apply)
 
+
 def schnet_neighbor_list(
         displacement_fn: DisplacementFn,
         box_size: Box,
